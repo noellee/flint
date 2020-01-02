@@ -13,7 +13,7 @@ debug: generate-sources
 	cp -r stdlib .build/debug/
 
 release: generate-sources $(BOOGIE_EXE) $(SYMBOOGLIX_EXE)
-	swift build -c release $(BUILD_FLAG)
+	swift build -c release $(BUILD_FLAGS)
 	cp -r stdlib .build/release/
 
 xcode:
