@@ -48,7 +48,9 @@ let package = Package(
     .package(url: "https://github.com/attaswift/BigInt.git", 
              .revision("7bd99f7ebb8886cd3a0dfac26fea9c1049027a08")),
     .package(url: "https://github.com/SwiftyJSON/SwiftyJSON.git", 
-             .revision("bad5f2f94a71216a32c030a3586bdcfc1f7e660b"))
+             .revision("bad5f2f94a71216a32c030a3586bdcfc1f7e660b")),
+    .package(url: "https://github.com/noellee/Web3.swift",
+        .revision("e78594e54efc0f846b5594f45c5bf990d00408e8")),
   ],
   targets: [
     .target(
@@ -63,6 +65,9 @@ let package = Package(
     .target(
       name: "flint-repl",
       dependencies: ["Commander", "Rainbow", "Symbolic", "Diagnostic", "REPL", "Utils"]),
+    .target(
+      name: "flint-debug",
+      dependencies: ["Commander", "Debugger"]),
     .target(
       name: "Source",
       dependencies: []
@@ -119,6 +124,18 @@ let package = Package(
         "Cuckoo",
       ],
       sources: [".", "../../.derived-tests/Diagnostic"]
+    ),
+    // MARK: Debugger -
+    .target(
+      name: "Debugger",
+      dependencies: [
+        "Rainbow",
+        "CryptoSwift",
+        "Utils",
+        "Web3",
+        "Web3PromiseKit",
+        "Web3ContractABI",
+      ]
     ),
     // MARK: Lexer -
     .target(
