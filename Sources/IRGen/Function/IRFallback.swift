@@ -6,9 +6,10 @@
 //
 
 import AST
+import Source
 
 /// Generates code for a contract fallback.
-struct IRContractFallback {
+struct IRContractFallback: RenderableToCodeFragment {
   var fallbackDeclaration: SpecialDeclaration
   var typeIdentifier: Identifier
 
@@ -27,7 +28,7 @@ struct IRContractFallback {
     }
   }
 
-  func rendered() -> String {
+  func rendered() -> CodeFragment {
     return IRFunctionBody(functionDeclaration: fallbackDeclaration.asFunctionDeclaration,
                           typeIdentifier: typeIdentifier,
                           callerBinding: nil,

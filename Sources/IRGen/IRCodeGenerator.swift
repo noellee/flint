@@ -6,6 +6,7 @@
 //
 
 import AST
+import Source
 
 /// Generates code for a Flint AST.
 public struct IRCodeGenerator {
@@ -17,7 +18,7 @@ public struct IRCodeGenerator {
     self.environment = environment
   }
 
-  public func generateCode() -> String {
+  public func generateCode() -> CodeFragment {
     var contracts = [IRContract]()
     var interfaces = [IRInterface]()
 

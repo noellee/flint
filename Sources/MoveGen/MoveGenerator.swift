@@ -5,6 +5,7 @@
 import Foundation
 import AST
 import Diagnostic
+import Source
 
 public struct MoveGenerator {
   var topLevelModule: TopLevelModule
@@ -25,7 +26,7 @@ public struct MoveGenerator {
     }
   }
 
-  public func generateCode() -> String {
+  public func generateCode() -> CodeFragment {
 
     let externalTraitDeclarations = topLevelModule.declarations.compactMap { declaration -> TraitDeclaration? in
       switch declaration {
@@ -61,6 +62,7 @@ public struct MoveGenerator {
     }
 
     // Generate an IR contract
-    return contracts.map { $0.rendered() }.joined(separator: "\n")
+    let code = contracts.map { $0.rendered() }.joined(separator: "\n")
+    return CodeFragment(code)
   }
 }

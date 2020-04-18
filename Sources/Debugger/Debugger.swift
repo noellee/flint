@@ -9,6 +9,7 @@ public class Debugger {
   var trace: EthereumTransactionTraceObject?
   var currentLogIndex: Int = 0
   var breakpoints: Set<Int> = []
+  var sourceCodeManager: SourceCodeManager?
 
   public init(txHash: String) {
     self.txHash = try! EthereumData(ethereumValue: txHash)
@@ -33,6 +34,18 @@ public class Debugger {
     }
   }
 
+  private func printSourceAt(index: Int) {
+    let loc = sourceCodeManager!.getSourceLocation(pc: Int(trace!.structLogs[index].pc))
+    guard loc != nil else { return }
+    let line = sourceCodeManager!.getLine(lineNumber: loc!.line)
+    let lineLabel = "\(loc!.line): "
+
+    print("\n\(loc!.file.relativeString):\n")
+    print(lineLabel, line)
+    let padding = String(repeating: " ", count: lineLabel.count)
+    print(padding, String(repeating: " ", count: loc!.column) + String(repeating: "^", count: min(loc!.length, line.count)))
+  }
+
   private func printSourceContext() {
     let start = max(currentLogIndex - 3, 0)
     let end = min(currentLogIndex + 3, trace!.structLogs.count - 1)
@@ -43,10 +56,14 @@ public class Debugger {
         printInstrAt(index: i)
       }
     }
+    printSourceAt(index: currentLogIndex)
   }
 
   private func stepNext() {
-    currentLogIndex += 1
+    let initLoc = sourceCodeManager!.getSourceLocation(pc: Int(trace!.structLogs[currentLogIndex].pc))
+    repeat {
+      currentLogIndex += 1
+    } while initLoc == sourceCodeManager!.getSourceLocation(pc: Int(trace!.structLogs[currentLogIndex].pc))
   }
 
   private func addBreakpoint(breakpoint: Int) {
@@ -81,7 +98,7 @@ public class Debugger {
   }
 
   private func loadSourceMap() {
-
+    sourceCodeManager = try? SoliditySourceCodeManager.load()
   }
 
   public func run() throws {

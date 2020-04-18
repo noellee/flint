@@ -6,9 +6,10 @@
 //
 
 import AST
+import Source
 
 /// Generates code for a contract.
-struct IRContract {
+struct IRContract: RenderableToCodeFragment {
 
   static var stateVariablePrefix = "flintState$"
   static var reentrancyProtectorValue = 10000
@@ -26,7 +27,7 @@ struct IRContract {
     self.environment = environment
   }
 
-  func rendered() -> String {
+  func rendered() -> CodeFragment {
     // Generate code for each function in the contract.
     let functions = contractBehaviorDeclarations.flatMap { contractBehaviorDeclaration in
       return contractBehaviorDeclaration.members.compactMap { member -> IRFunction? in

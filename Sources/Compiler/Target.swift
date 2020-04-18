@@ -18,10 +18,11 @@ import IRGen
 import Verifier
 import Utils
 import MoveGen
+import Source
 
 public protocol Target {
   init(config: CompilerConfiguration, environment: Environment, sourceContext: SourceContext)
-  func generate(ast: TopLevelModule) throws -> String
+  func generate(ast: TopLevelModule) throws -> CodeFragment
 }
 
 public class EVMTarget: Target {
@@ -37,7 +38,7 @@ public class EVMTarget: Target {
     self.sourceContext = sourceContext
   }
 
-  public func generate(ast: TopLevelModule) throws -> String {
+  public func generate(ast: TopLevelModule) throws -> CodeFragment {
     // Run final IRPreprocessor pass
     let irPreprocessOutcome = ASTPassRunner(ast: ast).run(
         passes: (!config.skipVerifier ? [AssertPreprocessor()] : [])
@@ -58,7 +59,7 @@ public class EVMTarget: Target {
         .generateCode()
 
     // Compile the YUL IR code using solc.
-    try SolcCompiler(inputSource: irCode,
+    try SolcCompiler(inputSource: irCode.description,
                      outputDirectory: config.outputDirectory,
                      emitBytecode: config.emitBytecode).compile()
 
@@ -79,7 +80,7 @@ public class MoveTarget: Target {
     self.sourceContext = sourceContext
   }
 
-  public func generate(ast: TopLevelModule) throws -> String {
+  public func generate(ast: TopLevelModule) throws -> CodeFragment {
     // Run final IRPreprocessor pass
     let irPreprocessOutcome = ASTPassRunner(ast: ast).run(
         passes: (!config.skipVerifier ? [AssertPreprocessor()] : [])

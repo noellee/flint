@@ -9,6 +9,7 @@ import Utils
 /// The main function for the compiler.
 func main() {
   command(
+      Flag("emit-srcmap", flag: "m", description: "Emit the generated source map. (EVM only)"),
       Flag("emit-ir", flag: "i", description: "Emit the internal representation of the code."),
       Option<String>("ir-output", default: "", description: "The path at which the IR file should be created."),
       Flag("emit-bytecode", flag: "b", description: "Emit the EVM bytecode representation of the code."),
@@ -29,9 +30,9 @@ func main() {
       Option<String>("target", default: "evm",
                      description: "Set the compilation target (evm | move)"),
       VariadicArgument<String>("input files", description: "The input files to compile")) {
-    emitIR, irOutputPath, emitBytecode, dumpVerifierIR, printVerificationOutput, skipHolisticCheck, skipVerifier,
-    printHolisticRunStats, maxTransactionDepth, maxHolisticTimeout, skipCodeGen, dumpAST, shouldVerify, quiet,
-    noStdlib, target, inputFilePaths in
+    emitSrcMap, emitIR, irOutputPath, emitBytecode, dumpVerifierIR, printVerificationOutput, skipHolisticCheck,
+    skipVerifier, printHolisticRunStats, maxTransactionDepth, maxHolisticTimeout, skipCodeGen, dumpAST, shouldVerify,
+    quiet, noStdlib, target, inputFilePaths in
     let inputFiles = inputFilePaths.map(URL.init(fileURLWithPath:))
 
     for inputFile in inputFiles {
@@ -62,6 +63,7 @@ func main() {
           outputDirectory: outputDirectory,
           dumpAST: dumpAST,
           emitBytecode: emitBytecode,
+          emitSrcMap: emitSrcMap,
           dumpVerifierIR: dumpVerifierIR,
           printVerificationOutput: printVerificationOutput,
           skipHolisticCheck: skipHolisticCheck,

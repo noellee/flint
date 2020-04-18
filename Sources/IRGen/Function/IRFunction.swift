@@ -7,9 +7,10 @@
 
 import AST
 import CryptoSwift
+import Source
 
 /// Generates code for a function.
-struct IRFunction {
+struct IRFunction: RenderableToCodeFragment {
   static let returnVariableName = "ret"
 
   var functionDeclaration: FunctionDeclaration
@@ -69,7 +70,7 @@ struct IRFunction {
     return functionDeclaration.signature.resultType.flatMap({ CanonicalType(from: $0.rawType)! })
   }
 
-  func rendered() -> String {
+  func rendered() -> CodeFragment {
     let body = IRFunctionBody(functionDeclaration: functionDeclaration,
                               typeIdentifier: typeIdentifier,
                               callerBinding: callerBinding,
@@ -77,11 +78,11 @@ struct IRFunction {
                               environment: environment,
                               isContractFunction: isContractFunction).rendered()
 
-    return """
+    return ("""
     function \(signature()) {
       \(body.indented(by: 2))
     }
-    """
+    """ as CodeFragment).fromSource(functionDeclaration.sourceLocation)
   }
 
   func signature(withReturn: Bool = true) -> String {
@@ -99,7 +100,7 @@ struct IRFunction {
   }
 }
 
-struct IRFunctionBody {
+struct IRFunctionBody: RenderableToCodeFragment {
   var functionDeclaration: FunctionDeclaration
   var typeIdentifier: Identifier
 
@@ -129,7 +130,7 @@ struct IRFunctionBody {
      self.isContractFunction = isContractFunction
    }
 
-  func rendered() -> String {
+  func rendered() -> CodeFragment {
     let functionContext: FunctionContext = FunctionContext(environment: environment,
                                                            scopeContext: scopeContext,
                                                            enclosingTypeName: typeIdentifier.name,

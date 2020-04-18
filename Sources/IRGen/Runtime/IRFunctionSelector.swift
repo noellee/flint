@@ -42,7 +42,7 @@ struct IRFunctionSelector {
     if let fallbackDeclaration = fallback {
       return IRContractFallback(fallbackDeclaration: fallbackDeclaration,
                                 typeIdentifier: enclosingType,
-                                environment: environment).rendered()
+                                environment: environment).rendered().description
     } else {
       return "revert(0, 0)"
     }

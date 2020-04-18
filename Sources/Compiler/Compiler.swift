@@ -17,6 +17,7 @@ import Optimizer
 import IRGen
 import Verifier
 import Utils
+import Source
 
 /// Runs the different stages of the compiler.
 public struct Compiler {
@@ -161,7 +162,7 @@ extension Compiler {
         .generate(ast: passRunnerOutcome.element)
 
     print("Produced binary in \(config.outputDirectory.path.bold).")
-    return CompilationOutcome(irCode: irCode, astDump: ASTDumper(topLevelModule: ast).dump())
+    return CompilationOutcome(irCode: irCode.description, astDump: ASTDumper(topLevelModule: ast).dump())
   }
 }
 
@@ -305,7 +306,7 @@ extension Compiler {
     let irCode = try evmTarget.generate(ast: ast)
 
     // Compile the YUL IR code using solc.
-    try SolcCompiler(inputSource: irCode,
+    try SolcCompiler(inputSource: irCode.description,
                      outputDirectory: config.outputDirectory,
                      emitBytecode: false).compile()
 
@@ -385,7 +386,8 @@ extension Compiler {
     let irCode = try evmTarget.generate(ast: passRunnerOutcome.element)
 
     // Compile the YUL IR code using solc.
-    try SolcCompiler(inputSource: irCode, outputDirectory: config.outputDirectory, emitBytecode: false).compile()
+    try SolcCompiler(inputSource: irCode.description, outputDirectory: config.outputDirectory, emitBytecode: false)
+        .compile()
 
     // these are warnings from the solc compiler
     try config.diagnostics.display()
@@ -532,7 +534,8 @@ extension Compiler {
     let irCode = try evmTarget.generate(ast: passRunnerOutcome.element)
 
     // Compile the YUL IR code using solc.
-    try SolcCompiler(inputSource: irCode, outputDirectory: config.outputDirectory, emitBytecode: false).compile()
+    try SolcCompiler(inputSource: irCode.description, outputDirectory: config.outputDirectory, emitBytecode: false)
+        .compile()
 
     // these are warnings from the solc compiler
     try config.diagnostics.display()
@@ -640,6 +643,7 @@ public struct CompilerReplConfiguration {
                                  outputDirectory: outputDirectory,
                                  dumpAST: false,
                                  emitBytecode: true,
+                                 emitSrcMap: false,
                                  dumpVerifierIR: false,
                                  printVerificationOutput: false,
                                  skipHolisticCheck: true,
@@ -681,6 +685,7 @@ public struct CompilerContractAnalyserConfiguration {
                                  outputDirectory: outputDirectory,
                                  dumpAST: false,
                                  emitBytecode: true,
+                                 emitSrcMap: true,
                                  dumpVerifierIR: false,
                                  printVerificationOutput: false,
                                  skipHolisticCheck: true,
@@ -722,6 +727,7 @@ public struct CompilerTestFrameworkConfiguration {
                                  outputDirectory: outputDirectory,
                                  dumpAST: false,
                                  emitBytecode: true,
+                                 emitSrcMap: false,
                                  dumpVerifierIR: false,
                                  printVerificationOutput: false,
                                  skipHolisticCheck: true,
@@ -780,6 +786,7 @@ public struct CompilerConfiguration {
   public let outputDirectory: URL
   public let dumpAST: Bool
   public let emitBytecode: Bool
+  public let emitSrcMap: Bool
   public let dumpVerifierIR: Bool
   public let printVerificationOutput: Bool
   public let skipHolisticCheck: Bool
@@ -797,6 +804,7 @@ public struct CompilerConfiguration {
               outputDirectory: URL,
               dumpAST: Bool,
               emitBytecode: Bool,
+              emitSrcMap: Bool,
               dumpVerifierIR: Bool,
               printVerificationOutput: Bool,
               skipHolisticCheck: Bool,
@@ -813,6 +821,7 @@ public struct CompilerConfiguration {
     self.outputDirectory = outputDirectory
     self.dumpAST = dumpAST
     self.emitBytecode = emitBytecode
+    self.emitSrcMap = emitSrcMap
     self.dumpVerifierIR = dumpVerifierIR
     self.printVerificationOutput = printVerificationOutput
     self.skipHolisticCheck = skipHolisticCheck
