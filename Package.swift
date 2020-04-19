@@ -70,7 +70,7 @@ let package = Package(
       dependencies: ["Commander", "Debugger"]),
     .target(
       name: "Source",
-      dependencies: []
+      dependencies: ["Utils"]
     ),
     .testTarget(
       name: "SourceTests",
@@ -131,6 +131,7 @@ let package = Package(
       dependencies: [
         "Rainbow",
         "CryptoSwift",
+        "Source",
         "Utils",
         "Web3",
         "Web3PromiseKit",
@@ -312,6 +313,7 @@ let package = Package(
     .target(
       name: "YUL",
       dependencies: [
+        "Source",
         "Utils",
       ]
     ),

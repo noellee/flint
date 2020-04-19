@@ -22,7 +22,7 @@ import Source
 
 public protocol Target {
   init(config: CompilerConfiguration, environment: Environment, sourceContext: SourceContext)
-  func generate(ast: TopLevelModule) throws -> CodeFragment
+  func generate(ast: TopLevelModule) throws -> String
 }
 
 public class EVMTarget: Target {
@@ -38,7 +38,7 @@ public class EVMTarget: Target {
     self.sourceContext = sourceContext
   }
 
-  public func generate(ast: TopLevelModule) throws -> CodeFragment {
+  public func generate(ast: TopLevelModule) throws -> String {
     // Run final IRPreprocessor pass
     let irPreprocessOutcome = ASTPassRunner(ast: ast).run(
         passes: (!config.skipVerifier ? [AssertPreprocessor()] : [])
@@ -58,14 +58,18 @@ public class EVMTarget: Target {
                                  environment: irPreprocessOutcome.environment)
         .generateCode()
 
+    print(irCode.generateSourceMap().sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" })
+
+    let irCodeString = irCode.description
+
     // Compile the YUL IR code using solc.
-    try SolcCompiler(inputSource: irCode.description,
+    try SolcCompiler(inputSource: irCodeString,
                      outputDirectory: config.outputDirectory,
                      emitBytecode: config.emitBytecode).compile()
 
     try config.diagnostics.display()
 
-    return irCode
+    return irCodeString
   }
 }
 
@@ -80,7 +84,7 @@ public class MoveTarget: Target {
     self.sourceContext = sourceContext
   }
 
-  public func generate(ast: TopLevelModule) throws -> CodeFragment {
+  public func generate(ast: TopLevelModule) throws -> String {
     // Run final IRPreprocessor pass
     let irPreprocessOutcome = ASTPassRunner(ast: ast).run(
         passes: (!config.skipVerifier ? [AssertPreprocessor()] : [])
@@ -107,6 +111,6 @@ public class MoveTarget: Target {
     MoveGen.Diagnostics.display()
     try config.diagnostics.display()
 
-    return irCode
+    return irCode.description
   }
 }

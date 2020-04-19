@@ -1,6 +1,10 @@
 import Foundation
 import Utils
 
+public protocol RenderableToCodeFragment {
+  func rendered() -> CodeFragment
+}
+
 public struct SourceRange: Comparable, Hashable, CustomStringConvertible {
   let start: Int
   let length: Int
@@ -33,7 +37,7 @@ public extension Sequence where Self.Element == CodeFragment {
 }
 
 public struct CodeFragment: CustomStringConvertible {
-  private var fromSource: SourceLocation?
+  public var fromSource: SourceLocation?
   private var children: [CodeFragment] = []
 
   private var text: String = ""
@@ -46,7 +50,7 @@ public struct CodeFragment: CustomStringConvertible {
     self.init("")
   }
 
-  init(_ value: String, fromSource: SourceLocation) {
+  public init(_ value: String, fromSource: SourceLocation?) {
     self.text = value
     self.fromSource = fromSource
   }
@@ -69,7 +73,9 @@ public struct CodeFragment: CustomStringConvertible {
     }
 
     let length = children.isEmpty ? text.count : pos - offset
-    srcMap[SourceRange(start: offset, length: length)] = fromSource
+    if fromSource != nil {
+      srcMap[SourceRange(start: offset, length: length)] = fromSource
+    }
     return (srcMap, length)
   }
 }

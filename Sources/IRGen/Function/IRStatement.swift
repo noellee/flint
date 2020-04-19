@@ -15,23 +15,26 @@ struct IRStatement {
   var statement: AST.Statement
 
   func rendered(functionContext: FunctionContext) -> YUL.Statement {
+    var result: YUL.Statement
     switch statement {
     case .expression(let expression):
-      return .expression(IRExpression(expression: expression, asLValue: false)
+      result = .expression(IRExpression(expression: expression, asLValue: false)
         .rendered(functionContext: functionContext))
     case .ifStatement(let ifStatement):
-      return IRIfStatement(ifStatement: ifStatement).rendered(functionContext: functionContext)
+      result = IRIfStatement(ifStatement: ifStatement).rendered(functionContext: functionContext)
     case .returnStatement(let returnStatement):
-      return IRReturnStatement(returnStatement: returnStatement).rendered(functionContext: functionContext)
+      result = IRReturnStatement(returnStatement: returnStatement).rendered(functionContext: functionContext)
     case .becomeStatement(let becomeStatement):
-      return IRBecomeStatement(becomeStatement: becomeStatement).rendered(functionContext: functionContext)
+      result = IRBecomeStatement(becomeStatement: becomeStatement).rendered(functionContext: functionContext)
     case .emitStatement(let emitStatement):
-      return IREmitStatement(emitStatement: emitStatement).rendered(functionContext: functionContext)
+      result = IREmitStatement(emitStatement: emitStatement).rendered(functionContext: functionContext)
     case .forStatement(let forStatement):
-      return IRForStatement(forStatement: forStatement).rendered(functionContext: functionContext)
+      result = IRForStatement(forStatement: forStatement).rendered(functionContext: functionContext)
     case .doCatchStatement(let doCatchStatement):
-      return IRDoCatchStatement(doCatchStatement: doCatchStatement).rendered(functionContext: functionContext)
+      result = IRDoCatchStatement(doCatchStatement: doCatchStatement).rendered(functionContext: functionContext)
     }
+    result.sourceLocation = statement.sourceLocation
+    return result
   }
 }
 

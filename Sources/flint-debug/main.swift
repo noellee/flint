@@ -5,9 +5,15 @@ import Web3
 import Web3PromiseKit
 import PromiseKit
 
-struct SourceRange: Hashable {
+struct SourceRange: Comparable, Hashable, CustomStringConvertible {
   let start: Int
   let length: Int
+
+  var description: String { return "\(start):\(length)" }
+
+  public static func < (lhs: SourceRange, rhs: SourceRange) -> Bool {
+    return [lhs.start, lhs.length].lexicographicallyPrecedes([rhs.start, rhs.length])
+  }
 }
 
 extension Dictionary {
@@ -48,7 +54,7 @@ struct CodeFragment: ExpressibleByStringLiteral, ExpressibleByStringInterpolatio
    // the finished text for this whole component
    var description: String {
      get {
-       "<Code> \(string)"
+       return "<Code> \(string)"
      }
    }
 

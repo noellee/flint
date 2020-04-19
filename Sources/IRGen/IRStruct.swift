@@ -16,7 +16,7 @@ public struct IRStruct: RenderableToCodeFragment {
   var structDeclaration: StructDeclaration
   var environment: Environment
 
-  func rendered() -> CodeFragment {
+  public func rendered() -> CodeFragment {
     // At this point, the initializers and conforming functions have been converted to functions.
     let functionsCode = structDeclaration.functionDeclarations.compactMap { functionDeclaration in
       return IRFunction(functionDeclaration: functionDeclaration,

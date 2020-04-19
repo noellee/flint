@@ -7,6 +7,7 @@
 
 import YUL
 import AST
+import Source
 
 /// Context used when generating code the body of a function.
 class FunctionContext {
@@ -97,8 +98,8 @@ class FunctionContext {
 
   /// Returns the string representation of the outer block.
   /// The FunctionContext should not be used after this is called.
-  func finalise() -> String {
-    return (popBlock().statements.map {$0.description}).joined(separator: "\n")
+  func finalise() -> CodeFragment {
+    return (popBlock().statements.map {$0.rendered()}).joined(separator: "\n")
   }
 
   func pushDoCatch(_ doCatchStatement: DoCatchStatement) {

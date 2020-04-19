@@ -150,7 +150,7 @@ struct IRFunctionBody: RenderableToCodeFragment {
   }
 
   func renderBody<S: RandomAccessCollection & RangeReplaceableCollection>(_ statements: S,
-                                                                          functionContext: FunctionContext) -> String
+                                                                          functionContext: FunctionContext) -> CodeFragment
     where S.Element == AST.Statement, S.Index == Int {
     guard !statements.isEmpty else { return "" }
     var statements = statements
