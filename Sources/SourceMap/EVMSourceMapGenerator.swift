@@ -66,10 +66,7 @@ public class EVMSourceMapGenerator {
 
   func merge(_ sourceMap: SourceMap) -> SourceMap {
     var newMapping = [SourceMapEntry]()
-    for (i, mapping) in sourceMap.mappings.enumerated() {
-      let curr = "\(i) -> "
-      print(curr, terminator: "")
-
+    for mapping in sourceMap.mappings {
       let match = irSourceMap
           .filter {
             $0.0.contains(SourceRange(start: mapping.start, length: mapping.length))
