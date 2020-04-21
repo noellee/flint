@@ -98,6 +98,8 @@ let package = Package(
         "Symbolic",
         "Diagnostic",
         "Utils",
+        "Source",
+        "SourceMap",
       ]
     ),
     .testTarget(
@@ -132,10 +134,19 @@ let package = Package(
         "Rainbow",
         "CryptoSwift",
         "Source",
+        "SourceMap",
         "Utils",
         "Web3",
         "Web3PromiseKit",
         "Web3ContractABI",
+      ]
+    ),
+    // MARK: SourceMap
+    .target(
+      name: "SourceMap",
+      dependencies: [
+        "Source",
+        "Utils",
       ]
     ),
     // MARK: Lexer -

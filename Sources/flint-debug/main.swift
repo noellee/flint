@@ -7,10 +7,11 @@ import PromiseKit
 
 func main() {
   command(
-      Argument<String>("Transaction hash", description: "Hash of the transaction to be debugged")
-  ) { txHash in
+      Argument<String>("Transaction hash", description: "Hash of the transaction to be debugged"),
+      Argument<String>("Contract name", description: "Name of the smart contract")
+  ) { txHash, contractName in
 
-    let debugger = Debugger(txHash: txHash)
+    let debugger = Debugger(txHash: txHash, contractName: contractName)
 
     do {
       try debugger.run()

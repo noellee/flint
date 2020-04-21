@@ -19,6 +19,7 @@ import Verifier
 import Utils
 import MoveGen
 import Source
+import SourceMap
 
 public protocol Target {
   init(config: CompilerConfiguration, environment: Environment, sourceContext: SourceContext)
@@ -58,14 +59,22 @@ public class EVMTarget: Target {
                                  environment: irPreprocessOutcome.environment)
         .generateCode()
 
-    print(irCode.generateSourceMap().sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" })
-
     let irCodeString = irCode.description
 
     // Compile the YUL IR code using solc.
     try SolcCompiler(inputSource: irCodeString,
                      outputDirectory: config.outputDirectory,
-                     emitBytecode: config.emitBytecode).compile()
+                     emitBytecode: config.emitBytecode,
+                     emitSourceMap: config.emitSrcMap).compile()
+
+    if config.emitSrcMap {
+      do {
+        try EVMSourceMapGenerator(irSourceMap: irCode.generateSourceMap(), outputDirectory: config.outputDirectory).generate()
+      } catch {
+        print(error.localizedDescription)
+        print("Skipping source map generation...")
+      }
+    }
 
     try config.diagnostics.display()
 

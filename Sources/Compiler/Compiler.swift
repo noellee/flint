@@ -308,7 +308,8 @@ extension Compiler {
     // Compile the YUL IR code using solc.
     try SolcCompiler(inputSource: irCode.description,
                      outputDirectory: config.outputDirectory,
-                     emitBytecode: false).compile()
+                     emitBytecode: false,
+                     emitSourceMap: false).compile()
 
     // these are warnings from the solc compiler
     try config.diagnostics.display()
@@ -386,8 +387,10 @@ extension Compiler {
     let irCode = try evmTarget.generate(ast: passRunnerOutcome.element)
 
     // Compile the YUL IR code using solc.
-    try SolcCompiler(inputSource: irCode.description, outputDirectory: config.outputDirectory, emitBytecode: false)
-        .compile()
+    try SolcCompiler(inputSource: irCode.description,
+                     outputDirectory: config.outputDirectory,
+                     emitBytecode: false,
+                     emitSourceMap: false).compile()
 
     // these are warnings from the solc compiler
     try config.diagnostics.display()
@@ -534,8 +537,10 @@ extension Compiler {
     let irCode = try evmTarget.generate(ast: passRunnerOutcome.element)
 
     // Compile the YUL IR code using solc.
-    try SolcCompiler(inputSource: irCode.description, outputDirectory: config.outputDirectory, emitBytecode: false)
-        .compile()
+    try SolcCompiler(inputSource: irCode.description,
+                     outputDirectory: config.outputDirectory,
+                     emitBytecode: false,
+                     emitSourceMap: false).compile()
 
     // these are warnings from the solc compiler
     try config.diagnostics.display()

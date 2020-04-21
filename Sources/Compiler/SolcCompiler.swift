@@ -13,6 +13,7 @@ struct SolcCompiler {
   var inputSource: String
   var outputDirectory: URL
   var emitBytecode: Bool
+  var emitSourceMap: Bool
 
   func compile() throws {
     let temporaryFile = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
@@ -21,7 +22,10 @@ struct SolcCompiler {
 
     verifySolc(launchPath: Configuration.solcLocation.path)
     let arguments: [String] =
-      [temporaryFile.path, "--bin", "--overwrite"] + (emitBytecode ? ["--opcodes"] : []) + ["-o", outputDirectory.path]
+      [temporaryFile.path, "--bin", "--overwrite"]
+      + (emitBytecode ? ["--opcodes"] : [])
+      + ["-o", outputDirectory.path]
+      + (emitSourceMap ? ["--combined-json", "srcmap-runtime,srcmap,bin,bin-runtime"] : [])
     let processResult = Process.run(executableURL: Configuration.solcLocation,
                                     arguments: arguments,
                                     currentDirectoryURL: nil)

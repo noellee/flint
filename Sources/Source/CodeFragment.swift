@@ -6,10 +6,19 @@ public protocol RenderableToCodeFragment {
 }
 
 public struct SourceRange: Comparable, Hashable, CustomStringConvertible {
-  let start: Int
-  let length: Int
+  public let start: Int
+  public let length: Int
+
+  public init(start: Int, length: Int) {
+    self.start = start
+    self.length = length
+  }
 
   public var description: String { return "\(start):\(length)" }
+
+  public func contains(_ other: SourceRange) -> Bool {
+    return other.start >= self.start && other.start + other.length <= self.start + self.length
+  }
 
   public static func < (lhs: SourceRange, rhs: SourceRange) -> Bool {
     return [lhs.start, lhs.length].lexicographicallyPrecedes([rhs.start, rhs.length])

@@ -10,9 +10,11 @@ public class Debugger {
   var currentLogIndex: Int = 0
   var breakpoints: Set<Int> = []
   var sourceCodeManager: SourceCodeManager?
+  let contractName: String
 
-  public init(txHash: String) {
+  public init(txHash: String, contractName: String) {
     self.txHash = try! EthereumData(ethereumValue: txHash)
+    self.contractName = contractName
   }
 
   private func loadTransaction() throws {
@@ -37,7 +39,7 @@ public class Debugger {
   private func printSourceAt(index: Int) {
     let loc = sourceCodeManager!.getSourceLocation(pc: Int(trace!.structLogs[index].pc))
     guard loc != nil else { return }
-    let line = sourceCodeManager!.getLine(lineNumber: loc!.line)
+    let line = sourceCodeManager!.getLine(at: loc!)
     let lineLabel = "\(loc!.line): "
 
     print("\n\(loc!.file.relativeString):\n")
@@ -61,9 +63,14 @@ public class Debugger {
 
   private func stepNext() {
     let initLoc = sourceCodeManager!.getSourceLocation(pc: Int(trace!.structLogs[currentLogIndex].pc))
+    var currLoc = initLoc
     repeat {
       currentLogIndex += 1
-    } while initLoc == sourceCodeManager!.getSourceLocation(pc: Int(trace!.structLogs[currentLogIndex].pc))
+      currLoc = sourceCodeManager!.getSourceLocation(pc: Int(trace!.structLogs[currentLogIndex].pc))
+
+      if currLoc != initLoc && currLoc != nil { break }
+
+    } while currentLogIndex < trace!.structLogs.count && !shouldBreak()
   }
 
   private func addBreakpoint(breakpoint: Int) {
@@ -97,13 +104,14 @@ public class Debugger {
     }
   }
 
-  private func loadSourceMap() {
-    sourceCodeManager = try? SoliditySourceCodeManager.load()
+  private func loadSourceMap() throws {
+    sourceCodeManager = try SoliditySourceCodeManager(compilerArtifact: URL(fileURLWithPath: "bin/srcMap.json"),
+                                                      contractName: contractName)
   }
 
   public func run() throws {
     try loadTransaction()
-    loadSourceMap()
+    try loadSourceMap()
     guard self.trace != nil else {
       print("Unable to obtain trace for this transaction".lightRed.bold)
       return
