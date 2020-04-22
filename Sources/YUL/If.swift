@@ -5,8 +5,10 @@
 //  Created by Aurel Bílý on 12/26/18.
 //
 
+import Source
+
 // swiftlint:disable type_name
-public struct If: CustomStringConvertible, Throwing {
+public struct If: RenderableToCodeFragment, CustomStringConvertible, Throwing {
 // swiftlint:enable type_name
   public let expression: Expression
   public let block: Block
@@ -21,6 +23,10 @@ public struct If: CustomStringConvertible, Throwing {
   }
 
   public var description: String {
-    return "if \(expression.description) \(self.block)"
+    return rendered().description
+  }
+
+  public func rendered() -> CodeFragment {
+    return "if \(expression) \(self.block)"
   }
 }

@@ -5,7 +5,9 @@
 //  Created by Aurel Bílý on 12/26/18.
 //
 
-public struct FunctionDefinition: CustomStringConvertible {
+import Source
+
+public struct FunctionDefinition: RenderableToCodeFragment, CustomStringConvertible {
   public let identifier: Identifier
   public let arguments: [TypedIdentifier]
   public let returns: [TypedIdentifier]
@@ -22,6 +24,10 @@ public struct FunctionDefinition: CustomStringConvertible {
   }
 
   public var description: String {
+    return rendered().description
+  }
+
+  public func rendered() -> CodeFragment {
     let args = render(typedIdentifiers: self.arguments)
 
     var ret = ""

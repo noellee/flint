@@ -5,7 +5,9 @@
 //  Created by Aurel Bílý on 12/26/18.
 //
 
-public indirect enum Expression: CustomStringConvertible, Throwing {
+import Source
+
+public indirect enum Expression: RenderableToCodeFragment, CustomStringConvertible, Throwing {
   case functionCall(FunctionCall)
   case identifier(Identifier)
   case literal(Literal)
@@ -52,5 +54,9 @@ public indirect enum Expression: CustomStringConvertible, Throwing {
     case .inline(let s):
       return s
     }
+  }
+
+  public func rendered() -> CodeFragment {
+    return CodeFragment(description)  // TODO: add support for expression source locations
   }
 }

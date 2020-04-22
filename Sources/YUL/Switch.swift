@@ -5,7 +5,9 @@
 //  Created by Aurel Bílý on 12/26/18.
 //
 
-public struct Switch: CustomStringConvertible, Throwing {
+import Source
+
+public struct Switch: RenderableToCodeFragment, CustomStringConvertible, Throwing {
   public let expression: Expression
   public let cases: [(Literal, Block)]
   public let `default`: Block?
@@ -25,11 +27,15 @@ public struct Switch: CustomStringConvertible, Throwing {
   }
 
   public var description: String {
-    let cases = self.cases.map { (lit, block) in
-      return "case \(lit) \(block)"
+    return rendered().description
+  }
+
+  public func rendered() -> CodeFragment {
+    let cases: CodeFragment = self.cases.map { (lit, block) in
+      return "case \(lit) \(block)" as CodeFragment
     }.joined(separator: "\n")
 
-    let `default`: String
+    let `default`: CodeFragment
     if let defaultContent = self.default {
       `default` = "\ndefault \(defaultContent)"
     } else {

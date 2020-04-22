@@ -6,8 +6,9 @@
 //
 
 import Utils
+import Source
 
-public struct Block: CustomStringConvertible {
+public struct Block: RenderableToCodeFragment, CustomStringConvertible {
   public var statements: [Statement]
 
   public init(_ statements: Statement...) {
@@ -15,7 +16,11 @@ public struct Block: CustomStringConvertible {
   }
 
   public var description: String {
-    let statement_description = statements.map { $0.description }.joined(separator: "\n")
+    return rendered().description
+  }
+
+  public func rendered() -> CodeFragment {
+    let statement_description = statements.map { $0 }.joined(separator: "\n")
 
     return """
     {

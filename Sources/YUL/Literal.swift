@@ -5,12 +5,18 @@
 //  Created by Aurel Bílý on 12/26/18.
 //
 
-public enum Literal: CustomStringConvertible {
+import Source
+
+public enum Literal: RenderableToCodeFragment, CustomStringConvertible {
   case num(Int)
   case string(String)
   case bool(Bool)
   case decimal(Int, Int)
   case hex(String)
+
+  public func rendered() -> CodeFragment {
+    return CodeFragment(description)
+  }
 
   public var description: String {
     switch self {

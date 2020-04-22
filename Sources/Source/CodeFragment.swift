@@ -45,6 +45,12 @@ public extension Sequence where Self.Element == CodeFragment {
   }
 }
 
+public extension Sequence where Self.Element: RenderableToCodeFragment {
+  func joined(separator: String = "") -> CodeFragment {
+    return self.map { $0.rendered() }.joined(separator: separator)
+  }
+}
+
 public struct CodeFragment: CustomStringConvertible {
   public var fromSource: SourceLocation?
   private var children: [CodeFragment] = []
@@ -118,6 +124,10 @@ extension CodeFragment: ExpressibleByStringInterpolation {
       output += fragment
     }
 
+    public mutating func appendInterpolation(_ renderable: RenderableToCodeFragment) {
+      output += renderable.rendered()
+    }
+
     public mutating func appendInterpolation(_ string: String) {
       if !string.isEmpty {
         appendInterpolation(CodeFragment(string))
@@ -141,7 +151,7 @@ extension CodeFragment {
     return copy
   }
 
-  public func fromSource(_ fromSource: SourceLocation) -> CodeFragment {
+  public func fromSource(_ fromSource: SourceLocation?) -> CodeFragment {
     var copy = self
     copy.fromSource = fromSource
     return copy

@@ -5,7 +5,9 @@
 //  Created by Aurel Bílý on 12/26/18.
 //
 
-public struct ForLoop: CustomStringConvertible {
+import Source
+
+public struct ForLoop: RenderableToCodeFragment, CustomStringConvertible {
   public let initialize: Block
   public let condition: Expression
   public let step: Block
@@ -19,6 +21,10 @@ public struct ForLoop: CustomStringConvertible {
   }
 
   public var description: String {
+    return rendered().description
+  }
+
+  public func rendered() -> CodeFragment {
     return "for \(initialize) \(condition) \(step) \(body)"
   }
 }

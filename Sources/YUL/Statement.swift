@@ -48,18 +48,13 @@ public struct Statement: RenderableToCodeFragment, CustomStringConvertible, Thro
 
   public func rendered() -> CodeFragment {
     switch self.type {
-    case .block(let b):
-      return CodeFragment(b.description, fromSource: sourceLocation)
-    case .functionDefinition(let f):
-      return CodeFragment(f.description, fromSource: sourceLocation)
-    case .if(let ifs):
-      return CodeFragment(ifs.description, fromSource: sourceLocation)
-    case .expression(let e):
-      return CodeFragment(e.description, fromSource: sourceLocation)
-    case .switch(let sw):
-      return CodeFragment(sw.description, fromSource: sourceLocation)
-    case .`for`(let loop):
-      return CodeFragment(loop.description, fromSource: sourceLocation)
+    case .block(let s as RenderableToCodeFragment),
+         .functionDefinition(let s as RenderableToCodeFragment),
+         .if(let s as RenderableToCodeFragment),
+         .expression(let s as RenderableToCodeFragment),
+         .switch(let s as RenderableToCodeFragment),
+         .`for`(let s as RenderableToCodeFragment):
+      return s.rendered().fromSource(sourceLocation)
     case .break:
       return CodeFragment("break", fromSource: sourceLocation)
     case .continue:
@@ -67,7 +62,7 @@ public struct Statement: RenderableToCodeFragment, CustomStringConvertible, Thro
     case .noop:
       return ""
     case .inline(let s):
-      return CodeFragment(s.description, fromSource: sourceLocation)
+      return CodeFragment(s, fromSource: sourceLocation)
     }
   }
 
