@@ -45,7 +45,8 @@ public class Debugger {
     print("\n\(loc!.file.relativeString):\n")
     print(lineLabel, line)
     let padding = String(repeating: " ", count: lineLabel.count)
-    print(padding, String(repeating: " ", count: loc!.column) + String(repeating: "^", count: min(loc!.length, line.count)))
+    print(padding,
+          String(repeating: " ", count: loc!.column) + String(repeating: "^", count: min(loc!.length, line.count)))
   }
 
   private func printSourceContext() {

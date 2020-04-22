@@ -19,8 +19,10 @@ class SoliditySourceCodeManager: SourceCodeManager {
   init(compilerArtifact: URL, contractName: String) throws {
     let artifact = try SolcArtifact.from(file: compilerArtifact)
     self.contractInfo = artifact.contracts[contractName]!
-    self.sources = artifact.sourceList.map{ URL(fileURLWithPath: $0) }
-    self.pcToInstrIndex = SoliditySourceCodeManager.buildPcToInstrIdxTable(bin: contractInfo.binRuntime.data(using: .hexadecimal)!)
+    self.sources = artifact.sourceList.map { URL(fileURLWithPath: $0) }
+
+    let bin = contractInfo.binRuntime.data(using: .hexadecimal)!
+    self.pcToInstrIndex = SoliditySourceCodeManager.buildPcToInstrIdxTable(bin: bin)
   }
 
   func getSourceLocation(pc: Int) -> SourceLocation? {

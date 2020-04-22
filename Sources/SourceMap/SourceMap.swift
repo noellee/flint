@@ -63,10 +63,8 @@ public struct SourceMap {
         }
 
     for (lineIdx, line) in lines.enumerated().dropFirst() {
-      for (fieldIdx, field) in line.enumerated() {
-        if field == "" {
-          lines[lineIdx][fieldIdx] = lines[lineIdx - 1][fieldIdx]
-        }
+      for (fieldIdx, field) in line.enumerated() where field == "" {
+        lines[lineIdx][fieldIdx] = lines[lineIdx - 1][fieldIdx]
       }
     }
 

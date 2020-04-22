@@ -69,7 +69,8 @@ public class EVMTarget: Target {
 
     if config.emitSrcMap {
       do {
-        try EVMSourceMapGenerator(irSourceMap: irCode.generateSourceMap(), outputDirectory: config.outputDirectory).generate()
+        try EVMSourceMapGenerator(irSourceMap: irCode.generateSourceMap(), outputDirectory: config.outputDirectory)
+            .generate()
       } catch {
         print(error.localizedDescription)
         print("Skipping source map generation...")

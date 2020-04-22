@@ -147,15 +147,15 @@ extension CodeFragment {
     return copy
   }
 
-  public static func +(left: CodeFragment, right: String) -> CodeFragment {
+  public static func + (left: CodeFragment, right: String) -> CodeFragment {
     return left + CodeFragment(stringLiteral: right)
   }
 
-  public static func +(left: String, right: CodeFragment) -> CodeFragment {
+  public static func + (left: String, right: CodeFragment) -> CodeFragment {
     return CodeFragment(stringLiteral: left) + right
   }
 
-  public static func +(left: CodeFragment, right: CodeFragment) -> CodeFragment {
+  public static func + (left: CodeFragment, right: CodeFragment) -> CodeFragment {
     var copy: CodeFragment
     if left.children.isEmpty || left.fromSource != nil {
       copy = CodeFragment(left.text)
@@ -170,11 +170,13 @@ extension CodeFragment {
     return copy
   }
 
-  public static func +=(left: inout CodeFragment, right: CodeFragment) {
+  public static func += (left: inout CodeFragment, right: CodeFragment) {
+    // swiftlint:disable:next shorthand_operator
     left = left + right
   }
 
-  public static func +=(left: inout CodeFragment, right: String) {
+  public static func += (left: inout CodeFragment, right: String) {
+    // swiftlint:disable:next shorthand_operator
     left = left + right
   }
 }

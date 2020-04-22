@@ -48,10 +48,10 @@ public class EVMSourceMapGenerator {
     var artifact = try SolcArtifact.from(file: combinedJsonUrl)
     artifact.version = "asfads"
     artifact.sourceList = sourceList.map { $0.path }
-    artifact.contracts = [String:ContractInfo](
+    artifact.contracts = [String: ContractInfo](
       uniqueKeysWithValues: artifact.contracts
         .map { (String($0.key.split(separator: ":")[1]), $0.value ) }
-        .filter { k, v in !k.starts(with: "_Interface") }
+        .filter { k, _ in !k.starts(with: "_Interface") }
     )
     for (key, contract) in artifact.contracts {
       artifact.contracts[key]?.srcMap = merge(contract.srcMap)
@@ -68,12 +68,8 @@ public class EVMSourceMapGenerator {
     var newMapping = [SourceMapEntry]()
     for mapping in sourceMap.mappings {
       let match = irSourceMap
-          .filter {
-            $0.0.contains(SourceRange(start: mapping.start, length: mapping.length))
-          }
-          .map {
-            $1
-          }
+          .filter { $0.0.contains(SourceRange(start: mapping.start, length: mapping.length)) }
+          .map { $1 }
           .min(by: { $0.length < $1.length })
 
       if match != nil {

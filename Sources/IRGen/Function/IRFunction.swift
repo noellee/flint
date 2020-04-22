@@ -149,8 +149,8 @@ struct IRFunctionBody: RenderableToCodeFragment {
     return "\(callerBindingDeclaration)\(body)"
   }
 
-  func renderBody<S: RandomAccessCollection & RangeReplaceableCollection>(_ statements: S,
-                                                                          functionContext: FunctionContext) -> CodeFragment
+  func renderBody<S: RandomAccessCollection & RangeReplaceableCollection>(
+      _ statements: S, functionContext: FunctionContext) -> CodeFragment
     where S.Element == AST.Statement, S.Index == Int {
     guard !statements.isEmpty else { return "" }
     var statements = statements
