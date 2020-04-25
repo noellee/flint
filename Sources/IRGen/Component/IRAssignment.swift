@@ -13,6 +13,12 @@ struct IRAssignment {
   var rhs: AST.Expression
 
   func rendered(functionContext: FunctionContext, asTypeProperty: Bool = false) -> YUL.Expression {
+    var code = renderedInternal(functionContext: functionContext, asTypeProperty: asTypeProperty)
+    code.sourceLocation = .spanning(lhs, to: rhs)
+    return code
+  }
+
+  private func renderedInternal(functionContext: FunctionContext, asTypeProperty: Bool = false) -> YUL.Expression {
     let rhsIr = IRExpression(expression: rhs).rendered(functionContext: functionContext)
     let rhsCode = rhsIr.description
 

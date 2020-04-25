@@ -5,7 +5,9 @@
 //  Created by Aurel Bílý on 12/26/18.
 //
 
-public struct Assignment: CustomStringConvertible, Throwing {
+import Source
+
+public struct Assignment: RenderableToCodeFragment, CustomStringConvertible, Throwing {
   public let identifiers: [Identifier]
   public let expression: Expression
 
@@ -19,6 +21,10 @@ public struct Assignment: CustomStringConvertible, Throwing {
   }
 
   public var description: String {
+    return rendered().description
+  }
+
+  public func rendered() -> CodeFragment {
     let lhs = self.identifiers.joined(separator: ", ")
     return "\(lhs) := \(self.expression)"
   }

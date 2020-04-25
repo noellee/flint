@@ -5,7 +5,9 @@
 //  Created by Aurel Bílý on 12/26/18.
 //
 
-public struct FunctionCall: CustomStringConvertible, Throwing {
+import Source
+
+public struct FunctionCall: RenderableToCodeFragment, CustomStringConvertible, Throwing {
   public let name: Identifier
   public let arguments: [Expression]
 
@@ -23,9 +25,11 @@ public struct FunctionCall: CustomStringConvertible, Throwing {
   }
 
   public var description: String {
-    let args = arguments.map({ arg in
-      return arg.description
-    }).joined(separator: ", ")
+    return rendered().description
+  }
+
+  public func rendered() -> CodeFragment {
+    let args = arguments.joined(separator: ", ")
     return "\(name)(\(args))"
   }
 }

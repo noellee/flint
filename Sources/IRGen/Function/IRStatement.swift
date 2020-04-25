@@ -251,8 +251,8 @@ struct IRReturnStatement {
       return .inline("")
     }
 
-    let renderedExpression = IRExpression(expression: expression).rendered(functionContext: functionContext)
-    return .inline("\(IRFunction.returnVariableName) := \(renderedExpression.description)")
+    let renderedExpression = IRExpression(expression: expression).rendered(functionContext: functionContext).rendered()
+    return .inline("\(IRFunction.returnVariableName) := \(renderedExpression)")
   }
 }
 
@@ -275,7 +275,7 @@ struct IRBecomeStatement {
                        op: Token(kind: .punctuation(.equal), sourceLocation: sl),
                        rhs: becomeStatement.expression))
 
-    return .inline(IRExpression(expression: assignState).rendered(functionContext: functionContext).description)
+    return .inline(IRExpression(expression: assignState).rendered(functionContext: functionContext).rendered())
   }
 }
 
@@ -285,7 +285,7 @@ struct IREmitStatement {
 
   func rendered(functionContext: FunctionContext) -> YUL.Statement {
     return .inline(IRFunctionCall(functionCall: emitStatement.functionCall)
-      .rendered(functionContext: functionContext).description)
+      .rendered(functionContext: functionContext).rendered())
   }
 }
 

@@ -17,7 +17,7 @@ public enum StatementType {
   case `break`
   case `continue`
   case noop
-  case inline(String)
+  case inline(CodeFragment)
 }
 
 public struct Statement: RenderableToCodeFragment, CustomStringConvertible, Throwing {
@@ -61,8 +61,8 @@ public struct Statement: RenderableToCodeFragment, CustomStringConvertible, Thro
       return CodeFragment("continue", fromSource: sourceLocation)
     case .noop:
       return ""
-    case .inline(let s):
-      return CodeFragment(s, fromSource: sourceLocation)
+    case .inline(let code):
+      return code.fromSource(sourceLocation)
     }
   }
 
@@ -103,7 +103,7 @@ public struct Statement: RenderableToCodeFragment, CustomStringConvertible, Thro
     return Statement(.noop)
   }
 
-  public static func inline(_ string: String) -> Statement {
-    return Statement(.inline(string))
+  public static func inline(_ code: CodeFragment) -> Statement {
+    return Statement(.inline(code))
   }
 }

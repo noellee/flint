@@ -5,7 +5,9 @@
 //  Created by Aurel Bílý on 12/26/18.
 //
 
-public struct VariableDeclaration: CustomStringConvertible, Throwing {
+import Source
+
+public struct VariableDeclaration: RenderableToCodeFragment, CustomStringConvertible, Throwing {
   public let declarations: [TypedIdentifier]
   public let expression: Expression?
 
@@ -19,10 +21,14 @@ public struct VariableDeclaration: CustomStringConvertible, Throwing {
   }
 
   public var description: String {
+    return rendered().description
+  }
+
+  public func rendered() -> CodeFragment {
     let decls = render(typedIdentifiers: self.declarations)
     if self.expression == nil {
       return "let \(decls)"
     }
-    return "let \(decls) := \(self.expression!.description)"
+    return "let \(decls) := \(self.expression!)"
   }
 }

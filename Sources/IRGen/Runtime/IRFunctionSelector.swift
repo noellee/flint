@@ -119,7 +119,7 @@ struct IRReentrancyProtection {
                                                  isInStructFunction: false))
 
     return .inline("""
-    if eq(\(stateVariableRendered.description), \(IRContract.reentrancyProtectorValue)) { revert(0, 0) }
+    if eq(\(stateVariableRendered), \(String(IRContract.reentrancyProtectorValue))) { revert(0, 0) }
     """)
   }
 }
