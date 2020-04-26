@@ -20,6 +20,12 @@ struct IRExpression {
   }
 
   func rendered(functionContext: FunctionContext) -> YUL.Expression {
+    var expr = renderedInternal(functionContext: functionContext)
+    expr.sourceLocation = expression.sourceLocation
+    return expr
+  }
+
+  private func renderedInternal(functionContext: FunctionContext) -> YUL.Expression {
     switch expression {
     case .inoutExpression(let inoutExpression):
       return IRExpression(expression: inoutExpression.expression, asLValue: true)
