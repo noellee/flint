@@ -21,7 +21,12 @@ struct IRExpression {
 
   func rendered(functionContext: FunctionContext) -> YUL.Expression {
     var expr = renderedInternal(functionContext: functionContext)
-    expr.sourceLocation = expression.sourceLocation
+    switch expression {
+    case AST.Expression.rawAssembly(_, _): // special case: throws fatal error on source location access
+      return expr
+    default:
+      expr.sourceLocation = expression.sourceLocation
+    }
     return expr
   }
 
