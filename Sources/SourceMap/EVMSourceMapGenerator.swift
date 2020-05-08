@@ -68,9 +68,9 @@ public class EVMSourceMapGenerator {
     var newMapping = [SourceMapEntry]()
     for mapping in sourceMap.mappings {
       let match = irSourceMap
-          .filter { $0.0.contains(SourceRange(start: mapping.start, length: mapping.length)) }
-          .map { $1 }
-          .min(by: { $0.length < $1.length })
+          .filter { $0.key.contains(SourceRange(start: mapping.start, length: mapping.length)) }
+          .min(by: { $0.key.length < $1.key.length })
+          .map { $0.value }
 
       if match != nil {
         newMapping.append(
