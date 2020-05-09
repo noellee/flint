@@ -17,11 +17,20 @@ class SoliditySourceCodeManager: SourceCodeManager {
   var contractInfo: ContractInfo
 
   init(compilerArtifact: URL, contractName: String) throws {
-    let artifact = try SolcArtifact.from(file: compilerArtifact)
-    self.contractInfo = artifact.contracts[contractName]!
+    guard let artifact = try? SolcArtifact.from(file: compilerArtifact) else {
+      throw DebuggerError.invalidSourceMap(compilerArtifact.path)
+    }
+    guard let contractInfo = artifact.contracts[contractName] else {
+      throw DebuggerError.unknownContract(contractName)
+    }
+
+    self.contractInfo = contractInfo
     self.sources = artifact.sourceList.map { URL(fileURLWithPath: $0) }
 
-    let bin = contractInfo.binRuntime.data(using: .hexadecimal)!
+    guard let bin = contractInfo.binRuntime.data(using: .hexadecimal) else {
+      throw DebuggerError.invalidSourceMap(compilerArtifact.path, details: "Corrupted contents")
+    }
+
     self.pcToInstrIndex = SoliditySourceCodeManager.buildPcToInstrIdxTable(bin: bin)
   }
 
@@ -35,7 +44,7 @@ class SoliditySourceCodeManager: SourceCodeManager {
     let url = sources[mapping.srcIndex]
 
     let source: String = try! String(contentsOf: url)  // TODO: cache source files?
-    let srcPos = source.characterRowAndLineAt(position: mapping.start)
+    let srcPos = source.characterLineAndColumnAt(position: mapping.start)
     return SourceLocation(line: srcPos.line,
                           column: srcPos.column,
                           length: mapping.length,
@@ -72,13 +81,21 @@ class SoliditySourceCodeManager: SourceCodeManager {
 }
 
 extension String {
-  func characterRowAndLineAt(position: Int) -> (line: Int, column: Int) {
+  /// Return the line adn column of a character in a string
+  ///
+  /// - Parameter position: 0-indexed position
+  /// - Returns: 1-indexed line and column of the character at the given position. If the position is out of range, both
+  ///            the returned line and column would be 0.
+  func characterLineAndColumnAt(position: Int) -> (line: Int, column: Int) {
+    guard 0 <= position, position < self.count else {
+      return (line: 0, column: 0)
+    }
     let range = NSRange(location: 0, length: position)
     let regex = try! NSRegularExpression(pattern: "[\n\r]")
     let matches = regex.matches(in: self, range: range)
     let line = matches.count
     let lineBeginningPos = line == 0 ? 0 : matches[line - 1].range.upperBound
     let column = position - lineBeginningPos
-    return (line: line + 1, column: column)
+    return (line: line + 1, column: column + 1)
   }
 }
