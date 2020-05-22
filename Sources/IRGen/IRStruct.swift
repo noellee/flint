@@ -24,6 +24,6 @@ public struct IRStruct: RenderableToCodeFragment {
                         environment: environment).rendered()
     }.joined(separator: "\n\n")
 
-    return functionsCode
+    return functionsCode.fromSource(structDeclaration.sourceLocation)
   }
 }

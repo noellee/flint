@@ -69,7 +69,9 @@ public class EVMTarget: Target {
 
     if config.emitSrcMap {
       do {
-        try EVMSourceMapGenerator(irSourceMap: irCode.generateSourceMap(), outputDirectory: config.outputDirectory)
+        try EVMSourceMapGenerator(irSourceMap: irCode.generateSourceMap(),
+                                  topLevelModule: irPreprocessOutcome.element,
+                                  outputDirectory: config.outputDirectory)
             .generate()
       } catch {
         print(error.localizedDescription)

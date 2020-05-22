@@ -145,6 +145,7 @@ let package = Package(
     .target(
       name: "SourceMap",
       dependencies: [
+        "AST",
         "Source",
         "Utils",
       ]

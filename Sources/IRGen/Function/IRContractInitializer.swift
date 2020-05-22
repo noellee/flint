@@ -6,9 +6,10 @@
 //
 
 import AST
+import Source
 
 /// Generates code for a contract initializer.
-struct IRContractInitializer {
+struct IRContractInitializer: RenderableToCodeFragment {
   var initializerDeclaration: SpecialDeclaration
   var typeIdentifier: Identifier
 
@@ -46,7 +47,7 @@ struct IRContractInitializer {
     return ScopeContext(parameters: initializerDeclaration.signature.parameters, localVariables: localVariables)
   }
 
-  func rendered() -> String {
+  func rendered() -> CodeFragment {
     let parameterSizes = initializerDeclaration.explicitParameters.map { environment.size(of: $0.type.rawType) }
     let offsetsAndSizes = zip(parameterSizes.reversed().reduce((0, [Int]())) { (acc, element) in
       let (size, sizes) = acc

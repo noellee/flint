@@ -1,5 +1,6 @@
 import Foundation
 import Source
+import AST
 
 public enum SourceMapGenerationError: LocalizedError {
   case fileNotFound(file: URL)
@@ -14,7 +15,9 @@ public enum SourceMapGenerationError: LocalizedError {
 
 extension SourceLocation {
   var start: Int {
-    let fileContent = try! String(contentsOf: self.file) // TODO: change this, shouldn't load file every time
+    guard let fileContent = try? String(contentsOf: self.file) else { // TODO: shouldn't load file every time
+      return 0
+    }
     return fileContent
         .components(separatedBy: .newlines)
         .map { $0.count + 1 }
@@ -28,8 +31,10 @@ public class EVMSourceMapGenerator {
   let outputDirectory: URL
   let sourceList: [URL]
   let sourceIndices: [URL: Int]
+  let funcCalls: [SourceLocation: String]
+  let functionDeclarations: [FunctionDeclaration]
 
-  public init(irSourceMap: [SourceRange: SourceLocation], outputDirectory: URL) {
+  public init(irSourceMap: [SourceRange: SourceLocation], topLevelModule: TopLevelModule, outputDirectory: URL) {
     self.irSourceMap = irSourceMap
     self.outputDirectory = outputDirectory
     self.sourceList = Array(Set(irSourceMap.values.map { $0.file }))
@@ -37,6 +42,19 @@ public class EVMSourceMapGenerator {
       let (i, url) = source
       result[url] = i
     })
+
+    self.funcCalls = topLevelModule.extractExpressions()
+        .compactMap { expr -> FunctionCall? in
+          if case let .functionCall(call) = expr {
+            return call
+          } else {
+            return nil
+          }
+        }
+        .reduce(into: [SourceLocation: String]()) { result, call in
+          result[call.sourceLocation] = call.identifier.name
+        }
+    self.functionDeclarations = topLevelModule.extractFunctionDeclarations()
   }
 
   public func generate(filename: String = "srcmap.json") throws {
@@ -64,6 +82,14 @@ public class EVMSourceMapGenerator {
     return sourceIndices[src] ?? -1
   }
 
+  private func getReturnInstrs(_ sourceMap: SourceMap) -> [Int] {
+    return self.functionDeclarations.compactMap { decl -> Int? in
+      sourceMap.mappings.enumerated().filter { _, entry in
+        entry.start == decl.sourceLocation.start && entry.length == decl.sourceLocation.length
+      }.map { $0.offset }.max()
+    }
+  }
+
   func merge(_ sourceMap: SourceMap) -> SourceMap {
     var newMapping = [SourceMapEntry]()
     for mapping in sourceMap.mappings {
@@ -72,13 +98,15 @@ public class EVMSourceMapGenerator {
           .min(by: { $0.key.length < $1.key.length })
           .map { $0.value }
 
-      if match != nil {
+      if let srcLoc = match {
+        let isFuncCall = self.funcCalls[srcLoc] != nil
+        let jump = isFuncCall ? JumpType.Into : mapping.jump
         newMapping.append(
             SourceMapEntry(
-                start: match!.start,
-                length: match!.length,
-                srcIndex: getSrcIndex(match!.file),
-                jump: mapping.jump,
+                start: srcLoc.start,
+                length: srcLoc.length,
+                srcIndex: getSrcIndex(srcLoc.file),
+                jump: jump,
                 modifierDepth: mapping.modifierDepth))
       } else {
         newMapping.append(SourceMapEntry(
@@ -90,6 +118,11 @@ public class EVMSourceMapGenerator {
       }
     }
 
-    return SourceMap(mappings: newMapping)
+    var result = SourceMap(mappings: newMapping)
+    let returnInstrs = getReturnInstrs(result)
+    returnInstrs.forEach { instr in
+      result.mappings[instr].jump = .Return
+    }
+    return result
   }
 }
