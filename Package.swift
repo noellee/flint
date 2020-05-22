@@ -51,6 +51,8 @@ let package = Package(
              .revision("bad5f2f94a71216a32c030a3586bdcfc1f7e660b")),
     .package(url: "https://github.com/noellee/Web3.swift",
         .revision("e78594e54efc0f846b5594f45c5bf990d00408e8")),
+    .package(url: "https://github.com/noellee/SwiftDAP",
+        .revision("4df9883b11eda511df23c40d2f077e477ce8b68d")),
   ],
   targets: [
     .target(
@@ -68,6 +70,9 @@ let package = Package(
     .target(
       name: "flint-debug",
       dependencies: ["Commander", "Debugger"]),
+    .target(
+        name: "flint-da",
+        dependencies: ["Commander", "DebugAdapterProtocol", "Debugger", "Rainbow", "Source"]),
     .target(
       name: "Source",
       dependencies: ["Utils"]

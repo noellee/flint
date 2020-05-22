@@ -12,7 +12,7 @@ venv
 /temp
 *.opcode
 *.bin
-file*
+file-check*
 solc-static-linux
 libra
 /*.bpl
