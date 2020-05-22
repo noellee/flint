@@ -1,3 +1,3 @@
 public enum DebuggerEvent {
-  case breakpoint, done
+  case breakpoint, done, step
 }

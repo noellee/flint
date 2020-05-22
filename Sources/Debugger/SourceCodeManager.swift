@@ -8,6 +8,7 @@ import Web3PromiseKit
 protocol SourceCodeManager {
   func getSourceLocation(pc: Int) -> SourceLocation?
   func getLine(at: SourceLocation) -> String
+  func getJumpType(pc: Int) -> JumpType
 }
 
 class SoliditySourceCodeManager: SourceCodeManager {
@@ -55,6 +56,12 @@ class SoliditySourceCodeManager: SourceCodeManager {
     let sourceCode = try! String(contentsOf: sourceLocation.file)
     let sourceLines = sourceCode.components(separatedBy: .newlines)
     return sourceLines[sourceLocation.line - 1]
+  }
+
+  func getJumpType(pc: Int) -> JumpType {
+    let instrIndex = pcToInstrIndex[pc]
+    let mapping = mappings[instrIndex]
+    return mapping.jump
   }
 
   static func getInstructionLength(instr: UInt8) -> UInt8 {

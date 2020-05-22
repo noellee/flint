@@ -93,6 +93,10 @@ public class DebuggerCLI {
       switch tokens[0] {
       case "n":
         debugger.stepNext()
+      case "i":
+        debugger.stepIn()
+      case "o":
+        debugger.stepOut()
       case "c":
         debugger.continueRun()
       case "b":

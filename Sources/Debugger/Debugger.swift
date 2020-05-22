@@ -9,6 +9,9 @@ public class Debugger: EventEmitter<DebuggerEvent> {
   var currentLogIndex: Int = 0
   var breakpoints: Set<Int> = []
   var sourceCodeManager: SourceCodeManager
+  public var stackFrame: [(name: String, sourceLoc: SourceLocation?)] {
+    return [(name: "frame", sourceLoc: currentSourceLocation)]
+  }
 
   public init(txHash: String, contractName: String, artifactDirectory: String,
               rpcURL: String = "http://localhost:8545") throws {
@@ -43,7 +46,61 @@ public class Debugger: EventEmitter<DebuggerEvent> {
     return sourceCodeManager.getSourceLocation(pc: Int(trace!.structLogs[currentLogIndex].pc))
   }
 
+  public var variables: [(name: String, value: String)] {
+    let log = trace!.structLogs[currentLogIndex]
+    return (log.stack?.enumerated().map { i, item in
+      (name: "\(i)", value: item.string ?? "")
+    } ?? []) + [
+      (name: "op", value: log.op),
+      (name: "pc", value: "\(log.pc)"),
+      (name: "jump", value: "\(sourceCodeManager.getJumpType(pc: Int(log.pc)))")
+    ]
+  }
+
+  public func stepOut() {
+    var log = trace!.structLogs[currentLogIndex]
+    repeat {
+      currentLogIndex += 1
+      log = trace!.structLogs[currentLogIndex]
+      if case .Return = sourceCodeManager.getJumpType(pc: Int(log.pc)) {
+        break
+      }
+    } while currentLogIndex < trace!.structLogs.count && !shouldBreak()
+    stepInInternal()
+    emitLineEvent()
+  }
+
   public func stepNext() {
+    var log = trace!.structLogs[currentLogIndex]
+    let isAtBreakpoint = shouldBreak()
+    switch sourceCodeManager.getJumpType(pc: Int(log.pc)) {
+    case .Into:
+      let targetFramePointer = log.stack!.count
+      repeat {
+        currentLogIndex += 1
+        log = trace!.structLogs[currentLogIndex]
+        if targetFramePointer == log.stack!.count {
+          break
+        }
+      } while currentLogIndex < trace!.structLogs.count && (isAtBreakpoint || !shouldBreak())
+    default:
+      break
+    }
+    stepInInternal()
+    emitLineEvent()
+  }
+
+  private func emitLineEvent() {
+    if shouldBreak() {
+      emit(.breakpoint)
+    } else if currentLogIndex >= trace!.structLogs.count {
+      emit(.done)
+    } else {
+      emit(.step)
+    }
+  }
+
+  private func stepInInternal() {
     let initLoc = currentSourceLocation
     var currLoc = initLoc
     repeat {
@@ -53,16 +110,19 @@ public class Debugger: EventEmitter<DebuggerEvent> {
       if currLoc != initLoc && currLoc != nil {
         break
       }
-
     } while currentLogIndex < trace!.structLogs.count && !shouldBreak()
+  }
 
-    if shouldBreak() {
-      emit(.breakpoint)
-    }
+  public func stepIn() {
+    stepInInternal()
+    emitLineEvent()
+  }
 
-    if currentLogIndex >= trace!.structLogs.count {
-      emit(.done)
-    }
+  public func stopOnEntry() {
+    repeat {
+      currentLogIndex += 1
+    } while currentLogIndex < trace!.structLogs.count && currentSourceLocation == nil
+    emit(.step)
   }
 
   public func clearBreakpoints() {
