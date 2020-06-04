@@ -10,12 +10,13 @@ public class DebuggerCLI {
   private var breakpoints: Set<Int> { return debugger.breakpoints }
   private var sourceCodeManager: SourceCodeManager? { return debugger.sourceCodeManager }
 
+  private var reverse: Bool = false
+
   let debugger: Debugger
 
-  public init(txHash: String, contractName: String, artifactDirectory: String, rpcURL: String) throws {
+  public init(txHash: String, artifactDirectory: String, rpcURL: String) throws {
     self.debugger = try Debugger(
         txHash: txHash,
-        contractName: contractName,
         artifactDirectory: artifactDirectory,
         rpcURL: rpcURL
     )
@@ -32,16 +33,24 @@ public class DebuggerCLI {
   }
 
   private func printSourceAt(index: Int) {
-    let loc = sourceCodeManager!.getSourceLocation(pc: Int(trace!.structLogs[index].pc))
-    guard loc != nil else { return }
-    let line = sourceCodeManager!.getLine(at: loc!)
-    let lineLabel = "\(loc!.line): "
+    guard let loc = debugger.currentSourceLocation else {
+      return
+    }
+    let extraBefore = 2
+    let extraAfter = 1
+    let lines = sourceCodeManager!.getLines(at: loc, extraBefore: extraBefore, extraAfter: extraAfter)
 
-    print("\n\(loc!.file.relativeString):\n")
-    print(lineLabel, line)
-    let padding = String(repeating: " ", count: lineLabel.count)
-    print(padding,
-          String(repeating: " ", count: loc!.column - 1) + String(repeating: "^", count: min(loc!.length, line.count)))
+    print("\n\(loc.file.relativeString):\n")
+    for (i, line) in lines.enumerated() {
+      let lineLabel = "\(loc.line - extraBefore + i): "
+      print(lineLabel, line)
+
+      if i == extraBefore {
+        let padding = String(repeating: " ", count: lineLabel.count)
+        print(padding,
+            String(repeating: " ", count: loc.column - 1) + String(repeating: "^", count: min(loc.length, line.count)))
+      }
+    }
   }
 
   private func printSourceContext() {
@@ -67,6 +76,27 @@ public class DebuggerCLI {
     }
   }
 
+  private func printVariables(location: String) {
+    let variables: [(name: String, value: String)]
+    switch location {
+    case "stack":
+      variables = debugger.stackVariables
+    case "memory":
+      variables = debugger.memoryVariables
+    case "storage":
+      variables = debugger.storageVariables
+    case "info":
+      variables = debugger.otherVariables
+    default:
+      variables = []
+    }
+    print(variables.map { "\($0.name): \($0.value)" }.joined(separator: "\n"))
+  }
+
+  private func toggleReverse() {
+    reverse.toggle()
+  }
+
   public func run() throws {
     guard self.trace != nil else {
       print("Unable to obtain trace for this transaction".lightRed.bold)
@@ -74,6 +104,10 @@ public class DebuggerCLI {
     }
     mainLoop: while currentLogIndex < trace!.structLogs.count {
       printSourceContext()
+      if reverse {
+        print()
+        print("Reverse debugging: ON".lightCyan)
+      }
       print("fdb> ".lightMagenta, terminator: "")
       let line = readLine()
       guard line != nil else {
@@ -94,25 +128,40 @@ public class DebuggerCLI {
       case "n":
         debugger.stepNext()
       case "i":
-        debugger.stepIn()
+        if reverse {
+          debugger.stepBack()
+        } else {
+          debugger.stepIn()
+        }
       case "o":
         debugger.stepOut()
+      case ";":
+        var count = 1
+        if tokens.count == 2, let arg = Int(tokens[1]) {
+          count = arg
+        }
+        debugger.stepInstruction(count: count, reverse: reverse)
       case "c":
-        debugger.continueRun()
+        debugger.continueRun(reverse: reverse)
       case "b":
-        let breakpoint = Int(tokens[1])
-        if breakpoint == nil {
+        guard let breakpoint = Int(tokens[1]) else {
           print("Breakpoint must be an integer")
           continue
         }
-        debugger.addBreakpoint(breakpoint!)
+        debugger.addBreakpoint(breakpoint)
       case "B":
-        let breakpoint = Int(tokens[1])
-        if breakpoint == nil {
+        guard let breakpoint = Int(tokens[1]) else {
           print("Breakpoint must be an integer")
           continue
         }
-        debugger.removeBreakpoint(breakpoint: breakpoint!)
+        debugger.removeBreakpoint(breakpoint: breakpoint)
+      case "r":
+        toggleReverse()
+      case "p":
+        guard tokens.count > 1 else {
+          continue
+        }
+        printVariables(location: String(tokens[1]))
       case "?":
         printBreakpoints()
       case "exit":

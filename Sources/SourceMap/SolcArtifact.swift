@@ -26,17 +26,28 @@ public struct SolcArtifact: Codable {
   }
 }
 
+public struct StorageVariable: Codable {
+  public var name: String
+  public var size: Int?  // non-nil if variable is fixed size array
+}
+
+public struct ContractMetadata: Codable {
+  public var storage: [StorageVariable]
+}
+
 public struct ContractInfo: Codable {
   public var binRuntime: String
   public var srcMapRuntime: SourceMap
   public var bin: String
   public var srcMap: SourceMap
+  public var metadata: ContractMetadata?
 
   private enum CodingKeys: String, CodingKey {
     case binRuntime = "bin-runtime"
     case srcMapRuntime = "srcmap-runtime"
     case bin = "bin"
     case srcMap = "srcmap"
+    case metadata = "metadata"
   }
 
   public init(from decoder: Decoder) throws {
@@ -45,6 +56,7 @@ public struct ContractInfo: Codable {
     bin = try values.decode(String.self, forKey: .bin)
     srcMapRuntime = SourceMap.fromString(try values.decode(String.self, forKey: .srcMapRuntime))
     srcMap = SourceMap.fromString(try values.decode(String.self, forKey: .srcMap))
+    metadata = try values.decodeIfPresent(ContractMetadata.self, forKey: .metadata)
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -53,5 +65,6 @@ public struct ContractInfo: Codable {
     try container.encode(bin, forKey: .bin)
     try container.encode(srcMapRuntime.toString(), forKey: .srcMapRuntime)
     try container.encode(srcMap.toString(), forKey: .srcMap)
+    try container.encodeIfPresent(metadata, forKey: .metadata)
   }
 }

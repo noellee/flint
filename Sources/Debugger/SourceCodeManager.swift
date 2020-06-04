@@ -7,32 +7,59 @@ import Web3PromiseKit
 
 protocol SourceCodeManager {
   func getSourceLocation(pc: Int) -> SourceLocation?
-  func getLine(at: SourceLocation) -> String
+  func getLines(at: SourceLocation, extraBefore: Int, extraAfter: Int) -> [String]
   func getJumpType(pc: Int) -> JumpType
+  func resolveStorageVarName(_ position: Int) -> String?
 }
 
-class SoliditySourceCodeManager: SourceCodeManager {
+class FlintSourceCodeManager: SourceCodeManager {
   var sources: [URL]
   var mappings: [SourceMapEntry] { return contractInfo.srcMapRuntime.mappings }
   var pcToInstrIndex: [Int]
   var contractInfo: ContractInfo
 
-  init(compilerArtifact: URL, contractName: String) throws {
+  init(compilerArtifact: URL, contractCode: String) throws {
     guard let artifact = try? SolcArtifact.from(file: compilerArtifact) else {
       throw DebuggerError.invalidSourceMap(compilerArtifact.path)
     }
-    guard let contractInfo = artifact.contracts[contractName] else {
-      throw DebuggerError.unknownContract(contractName)
-    }
 
-    self.contractInfo = contractInfo
+    self.contractInfo = try FlintSourceCodeManager.resolveContractInfo(artifact: artifact, code: contractCode)
     self.sources = artifact.sourceList.map { URL(fileURLWithPath: $0) }
 
     guard let bin = contractInfo.binRuntime.data(using: .hexadecimal) else {
-      throw DebuggerError.invalidSourceMap(compilerArtifact.path, details: "Corrupted contents")
+      throw DebuggerError.invalidSourceMap(compilerArtifact.path, details: "Corrupted compiler artifact")
     }
 
-    self.pcToInstrIndex = SoliditySourceCodeManager.buildPcToInstrIdxTable(bin: bin)
+    self.pcToInstrIndex = FlintSourceCodeManager.buildPcToInstrIdxTable(bin: bin)
+  }
+
+  private static func resolveContractInfo(artifact: CompilerArtifact, code: String) throws -> ContractInfo {
+    let match = artifact.contracts.first {
+      EthereumUtils.contractCodeEquivalent($0.value.binRuntime, code)
+    }
+    guard let contractInfo = match?.value else {
+      throw DebuggerError.unknownContract
+    }
+    return contractInfo
+  }
+
+  func resolveStorageVarName(_ position: Int) -> String? {
+    guard let metadata = contractInfo.metadata else {
+      return nil
+    }
+    var offset = 0
+    for variable in metadata.storage {
+      if let size = variable.size, offset <= position, position < offset + size {  // fixed array type
+        let index = position - offset
+        return "\(variable.name)[\(index)]"
+      }
+
+      if offset == position {
+        return variable.name
+      }
+      offset += variable.size ?? 1
+    }
+    return nil
   }
 
   func getSourceLocation(pc: Int) -> SourceLocation? {
@@ -52,10 +79,13 @@ class SoliditySourceCodeManager: SourceCodeManager {
                           file: url)
   }
 
-  func getLine(at sourceLocation: SourceLocation) -> String {
+  func getLines(at sourceLocation: SourceLocation, extraBefore: Int, extraAfter: Int) -> [String] {
     let sourceCode = try! String(contentsOf: sourceLocation.file)
     let sourceLines = sourceCode.components(separatedBy: .newlines)
-    return sourceLines[sourceLocation.line - 1]
+    let line = sourceLocation.line - 1
+    let start = max(line - extraBefore, 0)
+    let end = min(line + extraAfter, sourceLines.count)
+    return Array(sourceLines[start...end])
   }
 
   func getJumpType(pc: Int) -> JumpType {
@@ -64,19 +94,12 @@ class SoliditySourceCodeManager: SourceCodeManager {
     return mapping.jump
   }
 
-  static func getInstructionLength(instr: UInt8) -> UInt8 {
-    if 0x60 <= instr && instr < 0x7f {
-      return 1 + instr - 0x5f
-    }
-    return 1
-  }
-
   static func buildPcToInstrIdxTable(bin: Data) -> [Int] {
     var table = [Int]()
     var byteIndex = 0
     var instIndex = 0
     while byteIndex < bin.count {
-      let length = getInstructionLength(instr: bin[byteIndex])
+      let length = EthereumUtils.getInstructionLength(instr: bin[byteIndex])
       for _ in 0..<length {
         table.append(instIndex)
       }

@@ -5,7 +5,7 @@ import Web3PromiseKit
 import PromiseKit
 
 public class Debugger: EventEmitter<DebuggerEvent> {
-  var trace: EthereumTransactionTraceObject?
+  var trace: EthereumTransactionTraceObject
   var currentLogIndex: Int = 0
   var breakpoints: Set<Int> = []
   var sourceCodeManager: SourceCodeManager
@@ -13,115 +13,162 @@ public class Debugger: EventEmitter<DebuggerEvent> {
     return [(name: "frame", sourceLoc: currentSourceLocation)]
   }
 
-  public init(txHash: String, contractName: String, artifactDirectory: String,
+  public init(txHash: String, artifactDirectory: String,
               rpcURL: String = "http://localhost:8545") throws {
-    self.sourceCodeManager = try Debugger.loadSourceMap(artifactDirectory, for: contractName)
-    super.init()
-    try loadTransaction(rpcURL: rpcURL, txHash: txHash)
-  }
-
-  private func loadTransaction(rpcURL: String, txHash: String) throws {
     let web3 = Web3(rpcURL: rpcURL)
-
     guard let txHashData = try? EthereumData(ethereumValue: txHash) else {
       throw DebuggerError.initialization("Invalid tx hash \"\(txHash)\"")
     }
 
-    try firstly {
-      web3.debug.traceTransaction(transactionHash: txHashData)
-    }.done(on: DispatchQueue.global(qos: .userInteractive)) { txTrace in
-      guard let trace = txTrace else { throw DebuggerError.invalidTransaction(txHash) }
-      self.trace = trace
-    }.wait()
+    let code = try EthereumUtils.getContractCode(web3: web3, txHash: txHashData)
+    self.trace = try EthereumUtils.getTransaction(web3: web3, txHash: txHashData)
+    self.sourceCodeManager = try Debugger.loadSourceMap(artifactDirectory, for: code)
+    super.init()
   }
 
   private static func loadSourceMap(_ artifactDirectory: String,
-                                    `for` contract: String) throws -> SoliditySourceCodeManager {
+                                    `for` contractCode: String) throws -> FlintSourceCodeManager {
     let artifactDirURL = URL(fileURLWithPath: artifactDirectory, isDirectory: true)
     let artifactURL = URL(fileURLWithPath: "srcmap.json", relativeTo: artifactDirURL)
-    return try SoliditySourceCodeManager(compilerArtifact: artifactURL, contractName: contract)
+    return try FlintSourceCodeManager(compilerArtifact: artifactURL, contractCode: contractCode)
   }
 
   public var currentSourceLocation: SourceLocation? {
-    return sourceCodeManager.getSourceLocation(pc: Int(trace!.structLogs[currentLogIndex].pc))
+    return currentLogEntry != nil ? sourceCodeManager.getSourceLocation(pc: Int(currentLogEntry!.pc)) : nil
   }
 
-  public var variables: [(name: String, value: String)] {
-    let log = trace!.structLogs[currentLogIndex]
-    return (log.stack?.enumerated().map { i, item in
+  public var currentLogEntry: EthereumStructLogEntry? {
+    return trace.structLogs.indices.contains(currentLogIndex) ? trace.structLogs[currentLogIndex] : nil
+  }
+
+  public var stackVariables: [(name: String, value: String)] {
+    return currentLogEntry?.stack?.enumerated().map { i, item in
       (name: "\(i)", value: item.string ?? "")
-    } ?? []) + [
+    } ?? []
+  }
+
+  public var otherVariables: [(name: String, value: String)] {
+    guard let log = currentLogEntry else {
+      return []
+    }
+    return [
       (name: "op", value: log.op),
       (name: "pc", value: "\(log.pc)"),
+      (name: "gas", value: "\(log.gas)"),
+      (name: "gasCost", value: "\(log.gasCost)"),
       (name: "jump", value: "\(sourceCodeManager.getJumpType(pc: Int(log.pc)))")
     ]
   }
 
+  public var memoryVariables: [(name: String, value: String)] {
+    return currentLogEntry?.memory?
+        .enumerated()
+        .map {i, item in (name: "\(i)", value: item.string ?? "")} ?? []
+  }
+
+  public var storageVariables: [(name: String, value: String)] {
+    return currentLogEntry?.storage?
+        .compactMap { item -> (name: String, value: String)? in
+          guard let value = item.value.string,
+                let position = Int(item.key, radix: 16),
+                let name = sourceCodeManager.resolveStorageVarName(position) else {
+            return nil
+          }
+          return (name: name, value: value)
+        }
+        ?? []
+  }
+
   public func stepOut() {
-    var log = trace!.structLogs[currentLogIndex]
+    var log = currentLogEntry!
     repeat {
       currentLogIndex += 1
-      log = trace!.structLogs[currentLogIndex]
+      log = currentLogEntry!
       if case .Return = sourceCodeManager.getJumpType(pc: Int(log.pc)) {
         break
       }
-    } while currentLogIndex < trace!.structLogs.count && !shouldBreak()
-    stepInInternal()
+    } while currentLogIndex < trace.structLogs.count && !shouldBreak()
+    stepInternal()
     emitLineEvent()
   }
 
   public func stepNext() {
-    var log = trace!.structLogs[currentLogIndex]
+    var log = currentLogEntry!
     let isAtBreakpoint = shouldBreak()
     switch sourceCodeManager.getJumpType(pc: Int(log.pc)) {
     case .Into:
       let targetFramePointer = log.stack!.count
       repeat {
         currentLogIndex += 1
-        log = trace!.structLogs[currentLogIndex]
+        log = currentLogEntry!
         if targetFramePointer == log.stack!.count {
           break
         }
-      } while currentLogIndex < trace!.structLogs.count && (isAtBreakpoint || !shouldBreak())
+      } while currentLogIndex < trace.structLogs.count && (isAtBreakpoint || !shouldBreak())
     default:
       break
     }
-    stepInInternal()
+    stepInternal()
     emitLineEvent()
   }
 
   private func emitLineEvent() {
     if shouldBreak() {
       emit(.breakpoint)
-    } else if currentLogIndex >= trace!.structLogs.count {
+    } else if currentLogIndex >= trace.structLogs.count {
       emit(.done)
     } else {
       emit(.step)
     }
   }
 
-  private func stepInInternal() {
+  private func stepInternal(reverse: Bool = false) {
+    if currentLogIndex <= 0 && reverse {
+      return
+    }
+
+    if currentLogIndex >= trace.structLogs.count && !reverse {
+      return
+    }
+
     let initLoc = currentSourceLocation
     var currLoc = initLoc
     repeat {
-      currentLogIndex += 1
+      currentLogIndex += reverse ? -1 : 1
       currLoc = currentSourceLocation
 
       if currLoc != initLoc && currLoc != nil {
         break
       }
-    } while currentLogIndex < trace!.structLogs.count && !shouldBreak()
+    } while currentLogIndex > 0 && currentLogIndex < trace.structLogs.count && !shouldBreak()
+  }
+
+  public func stepInstruction(count: Int = 1, reverse: Bool = false) {
+    if currentLogIndex <= 0 && reverse {
+      return
+    }
+
+    if currentLogIndex >= trace.structLogs.count && !reverse {
+      return
+    }
+
+    currentLogIndex += reverse ? -count : count
   }
 
   public func stepIn() {
-    stepInInternal()
+    stepInternal()
+    emitLineEvent()
+  }
+
+  public func stepBack() {
+    stepInternal(reverse: true)
     emitLineEvent()
   }
 
   public func stopOnEntry() {
     repeat {
       currentLogIndex += 1
-    } while currentLogIndex < trace!.structLogs.count && currentSourceLocation == nil
+    } while currentLogIndex < trace.structLogs.count && currentSourceLocation == nil
     emit(.step)
   }
 
@@ -137,18 +184,11 @@ public class Debugger: EventEmitter<DebuggerEvent> {
     breakpoints.remove(breakpoint)
   }
 
-  public func continueRun() {
+  public func continueRun(reverse: Bool = false) {
     repeat {
-      currentLogIndex += 1
-    } while currentLogIndex < trace!.structLogs.count && !shouldBreak()
-
-    if shouldBreak() {
-      emit(.breakpoint)
-    }
-
-    if currentLogIndex >= trace!.structLogs.count {
-      emit(.done)
-    }
+      currentLogIndex += reverse ? -1 : 1
+    } while currentLogIndex < trace.structLogs.count && !shouldBreak()
+    emitLineEvent()
   }
 
   private func shouldBreak() -> Bool {

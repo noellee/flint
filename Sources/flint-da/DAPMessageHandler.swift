@@ -122,12 +122,29 @@ class FlintDAPMessageHandler: ProtocolMessageHandler {
           }
       sendResponse(.stackTrace(result, StackTraceResponse(stackFrames: frames, totalFrames: frames.count)))
     case .scopes:
-      let scope = Scope(name: "everything", variablesReference: 1, expensive: false)
-      sendResponse(.scopes(result, ScopesResponse(scopes: [scope])))
-    case .variables:
-      let variables = self.debugger!.variables.map { name, value in
-        Variable(name: name, value: value, variablesReference: 1)
+      sendResponse(.scopes(result, ScopesResponse(scopes: [
+        Scope(name: "stack", variablesReference: 1, expensive: false),
+        Scope(name: "memory", variablesReference: 2, expensive: false),
+        Scope(name: "storage", variablesReference: 3, expensive: false),
+        Scope(name: "others", variablesReference: 4, expensive: false),
+      ])))
+    case .variables(let args):
+      var vars: [(name: String, value: String)]
+      switch args.variablesReference {
+      case 1:
+        vars = self.debugger!.stackVariables
+      case 2:
+        vars = self.debugger!.memoryVariables
+      case 3:
+        vars = self.debugger!.storageVariables
+      case 4:
+        vars = self.debugger!.otherVariables
+      default:
+        vars = []
       }
+      let variables = vars.map { name, value in
+        Variable(name: name, value: value, variablesReference: 0)
+      }.sorted()
       sendResponse(.variables(result, VariablesResponse(variables: variables)))
     case .disconnect:
       sendResponse(.disconnect(result))

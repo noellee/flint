@@ -19,7 +19,28 @@ extension TopLevelModule: ExpressionContainer {
   }
 }
 
+extension ContractDeclaration {
+  func extractVariableDeclarations() -> [VariableDeclaration] {
+    return self.members.compactMap { member -> VariableDeclaration? in
+      switch member {
+      case .variableDeclaration(let decl): return decl
+      default: return nil
+      }
+    }
+  }
+}
+
 extension TopLevelModule {
+  func extractContractDeclarations() -> [ContractDeclaration] {
+    return self.declarations
+        .compactMap { declaration -> ContractDeclaration? in
+      switch declaration {
+      case .contractDeclaration(let decl): return decl
+      default: return nil
+      }
+    }
+  }
+
   func extractFunctionDeclarations() -> [FunctionDeclaration] {
     return self.declarations
         .compactMap { declaration -> ContractBehaviorDeclaration? in

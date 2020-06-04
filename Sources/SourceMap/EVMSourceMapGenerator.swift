@@ -33,15 +33,16 @@ public class EVMSourceMapGenerator {
   let sourceIndices: [URL: Int]
   let funcCalls: [SourceLocation: String]
   let functionDeclarations: [FunctionDeclaration]
+  let variableDeclarations: [String: [VariableDeclaration]]  // contract name -> [state variables]
 
   public init(irSourceMap: [SourceRange: SourceLocation], topLevelModule: TopLevelModule, outputDirectory: URL) {
     self.irSourceMap = irSourceMap
     self.outputDirectory = outputDirectory
     self.sourceList = Array(Set(irSourceMap.values.map { $0.file }))
-    self.sourceIndices = sourceList.enumerated().reduce(into: [URL: Int](), { (result, source) in
+    self.sourceIndices = sourceList.enumerated().reduce(into: [URL: Int]()) { (result, source) in
       let (i, url) = source
       result[url] = i
-    })
+    }
 
     self.funcCalls = topLevelModule.extractExpressions()
         .compactMap { expr -> FunctionCall? in
@@ -55,6 +56,10 @@ public class EVMSourceMapGenerator {
           result[call.sourceLocation] = call.identifier.name
         }
     self.functionDeclarations = topLevelModule.extractFunctionDeclarations()
+    self.variableDeclarations = topLevelModule.extractContractDeclarations()
+        .reduce(into: [String: [VariableDeclaration]]()) { (dict, contract) in
+          dict[contract.identifier.name] = contract.extractVariableDeclarations()
+        }
   }
 
   public func generate(filename: String = "srcmap.json") throws {
@@ -74,8 +79,23 @@ public class EVMSourceMapGenerator {
     for (key, contract) in artifact.contracts {
       artifact.contracts[key]?.srcMap = merge(contract.srcMap)
       artifact.contracts[key]?.srcMapRuntime = merge(contract.srcMapRuntime)
+      artifact.contracts[key]?.metadata = generateMetadata(contractName: key)
     }
     try artifact.to(file: URL(fileURLWithPath: filename, relativeTo: outputDirectory))
+  }
+
+  private func generateMetadata(contractName: String) -> ContractMetadata {
+    let varDecls: [VariableDeclaration] = self.variableDeclarations[contractName] ?? []
+    let storage: [StorageVariable] = varDecls.map { varDecl in
+      let name = varDecl.identifier.name
+      switch varDecl.type.rawType {
+      case .fixedSizeArrayType(_, let size):
+        return StorageVariable(name: name, size: size)
+      default:
+        return StorageVariable(name: name, size: nil)
+      }
+    }
+    return ContractMetadata(storage: storage)
   }
 
   private func getSrcIndex(_ src: URL) -> Int {
