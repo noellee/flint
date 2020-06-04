@@ -7,9 +7,10 @@ func main() {
   command(
       Option<String?>("log-file", default: nil, description: "File to write logs to"),
       Option<LoggingLevel?>("log-level", default: nil, description: "Logging level"),
+      Option<String>("rpc-url", default: "http://localhost:8545", description: "Ethereum client RPC URL"),
       Option<String?>("input", default: nil, description: "Input, defaults to stdin"),
       Option<String?>("output", default: nil, description: "Output, defaults to stdout")
-  ) { logFile, loggingLevel, inputPath, outputPath in
+  ) { logFile, loggingLevel, rpcURL, inputPath, outputPath in
 
     var input = FileHandle.standardInput
     if let path = inputPath {
@@ -25,7 +26,7 @@ func main() {
 
     DebugAdapter(input, output, logger)
         .withMessageHandler { sender in
-          FlintDAPMessageHandler(send: sender, logger: logger)
+          FlintDAPMessageHandler(send: sender, rpcURL: rpcURL, logger: logger)
         }
         .start()
 

@@ -52,7 +52,7 @@ let package = Package(
     .package(url: "https://github.com/noellee/Web3.swift",
         .revision("b5ee7c9750f7e97b30ba70840821f4db96b98095")),
     .package(url: "https://github.com/noellee/SwiftDAP",
-        .revision("4df9883b11eda511df23c40d2f077e477ce8b68d")),
+        .revision("a7ebf67e738b830a0722902761d3d82a7f563068")),
   ],
   targets: [
     .target(

@@ -25,13 +25,15 @@ class FlintDAPMessageHandler: ProtocolMessageHandler {
 
   let send: ProtocolMessageSender
   let logger: Logger?
-  var currSeq: Int
+  let rpcURL: String
   var debugger: Debugger?
 
-  init(send: @escaping ProtocolMessageSender, logger: Logger? = nil) {
+  var currSeq: Int = 1
+
+  init(send: @escaping ProtocolMessageSender, rpcURL: String, logger: Logger? = nil) {
     self.send = send
     self.logger = logger
-    self.currSeq = 1
+    self.rpcURL = rpcURL
   }
 
   func handle(message: ProtocolMessage) {
@@ -63,11 +65,17 @@ class FlintDAPMessageHandler: ProtocolMessageHandler {
     case .stepOut:
       sendResponse(.stepOut(result))
       self.debugger!.stepOut()
+    case .stepBack:
+      sendResponse(.stepBack(result))
+      self.debugger!.stepBack()
     case .continue:
       sendResponse(.continue(result, ContinueResponse(allThreadsContinued: true)))
       self.debugger!.continueRun()
+    case .reverseContinue:
+      sendResponse(.reverseContinue(result))
+      self.debugger!.continueRun(reverse: true)
     case .initialize:
-      let capabilities = Capabilities(supportsConfigurationDoneRequest: true)
+      let capabilities = Capabilities(supportsConfigurationDoneRequest: true, supportsStepBack: true)
       sendResponse(.initialize(result, capabilities))
       sendEvent(.initialized)
     case .launch(let args):
@@ -150,7 +158,8 @@ class FlintDAPMessageHandler: ProtocolMessageHandler {
 
   private func initDebugger(args: ExtraLaunchArguments) throws {
     self.debugger = try Debugger(txHash: args.txHash,
-                                 artifactDirectory: args.artifactDirectory)
+                                 artifactDirectory: args.artifactDirectory,
+                                 rpcURL: self.rpcURL)
     self.debugger!.on(event: .done) { self.sendEvent(.terminated(TerminatedEvent())) }
     self.debugger!.on(event: .breakpoint) {
       self.sendEvent(.stopped(StoppedEvent(reason: .breakpoint, threadId: self.THREAD_ID)))

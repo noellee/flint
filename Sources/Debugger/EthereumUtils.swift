@@ -55,7 +55,7 @@ fileprivate extension String {
   func dropContractMetadata() -> String {
     // https://solidity.readthedocs.io/en/v0.4.25/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
     // 0xa1 0x65 'b' 'z' 'z' 'r' '0' 0x58 0x20 <32 bytes swarm hash> 0x00 0x29
-    // a1   65   62  7a  7a  72  30  58   20
+    // a1   65   62  7a  7a  72  30  58   20   ...                   00   29
     let regex = try! NSRegularExpression(pattern: "a165627a7a72305820[a-f0-9]{64}0029$", options: .caseInsensitive)
     let range = NSRange(self.startIndex..., in: self)
     return regex.stringByReplacingMatches(in: self, range: range, withTemplate: "")
