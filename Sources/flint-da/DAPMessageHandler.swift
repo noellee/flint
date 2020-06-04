@@ -5,22 +5,17 @@ import Source
 
 struct ExtraLaunchArguments {
   var txHash: String
-  var contract: String
   var artifactDirectory: String
 
   init(_ args: LaunchArguments) throws {
     guard let txHash = args.extraArgs["txHash"] as? String else {
       throw DebuggerError.invalidLaunchArgument("txHash", "String")
     }
-    guard let contract = args.extraArgs["contract"] as? String else {
-      throw DebuggerError.invalidLaunchArgument("contract", "String")
-    }
     guard let artifactDirectory = args.extraArgs["artifactDirectory"] as? String else {
       throw DebuggerError.invalidLaunchArgument("artifactDirectory", "String")
     }
 
     self.txHash = txHash
-    self.contract = contract
     self.artifactDirectory = artifactDirectory
   }
 }
@@ -126,7 +121,7 @@ class FlintDAPMessageHandler: ProtocolMessageHandler {
         Scope(name: "stack", variablesReference: 1, expensive: false),
         Scope(name: "memory", variablesReference: 2, expensive: false),
         Scope(name: "storage", variablesReference: 3, expensive: false),
-        Scope(name: "others", variablesReference: 4, expensive: false),
+        Scope(name: "others", variablesReference: 4, expensive: false)
       ])))
     case .variables(let args):
       var vars: [(name: String, value: String)]
@@ -155,7 +150,6 @@ class FlintDAPMessageHandler: ProtocolMessageHandler {
 
   private func initDebugger(args: ExtraLaunchArguments) throws {
     self.debugger = try Debugger(txHash: args.txHash,
-                                 contractName: args.contract,
                                  artifactDirectory: args.artifactDirectory)
     self.debugger!.on(event: .done) { self.sendEvent(.terminated(TerminatedEvent())) }
     self.debugger!.on(event: .breakpoint) {
