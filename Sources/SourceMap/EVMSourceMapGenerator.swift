@@ -120,7 +120,7 @@ public class EVMSourceMapGenerator {
 
       if let srcLoc = match {
         let isFuncCall = self.funcCalls[srcLoc] != nil
-        let jump = isFuncCall ? JumpType.Into : mapping.jump
+        let jump = isFuncCall ? JumpType.into : mapping.jump
         newMapping.append(
             SourceMapEntry(
                 start: srcLoc.start,
@@ -141,7 +141,7 @@ public class EVMSourceMapGenerator {
     var result = SourceMap(mappings: newMapping)
     let returnInstrs = getReturnInstrs(result)
     returnInstrs.forEach { instr in
-      result.mappings[instr].jump = .Return
+      result.mappings[instr].jump = .return
     }
     return result
   }

@@ -84,7 +84,7 @@ public class Debugger: EventEmitter<DebuggerEvent> {
     repeat {
       currentLogIndex += 1
       log = currentLogEntry!
-      if case .Return = sourceCodeManager.getJumpType(pc: Int(log.pc)) {
+      if case .return = sourceCodeManager.getJumpType(pc: Int(log.pc)) {
         break
       }
     } while currentLogIndex < trace.structLogs.count && !shouldBreak()
@@ -95,8 +95,7 @@ public class Debugger: EventEmitter<DebuggerEvent> {
   public func stepNext() {
     var log = currentLogEntry!
     let isAtBreakpoint = shouldBreak()
-    switch sourceCodeManager.getJumpType(pc: Int(log.pc)) {
-    case .Into:
+    if sourceCodeManager.getJumpType(pc: Int(log.pc)) == .into {
       let targetFramePointer = log.stack!.count
       repeat {
         currentLogIndex += 1
@@ -105,8 +104,6 @@ public class Debugger: EventEmitter<DebuggerEvent> {
           break
         }
       } while currentLogIndex < trace.structLogs.count && (isAtBreakpoint || !shouldBreak())
-    default:
-      break
     }
     stepInternal()
     emitLineEvent()

@@ -1,36 +1,9 @@
 import Foundation
 
-public enum JumpType {
-  case None    // Not a jump instr
-  case Into    // Jump into a function
-  case Return  // Return from a function
-  case Regular // Generic jump
-
-  static func fromString(s: String) -> JumpType {
-    switch s {
-    case "i":
-      return .Into
-    case "o":
-      return .Return
-    case "-":
-      return .Regular
-    default:
-      return .None
-    }
-  }
-
-  func toString() -> String {
-    switch self {
-    case .Into:
-      return "i"
-    case .Return:
-      return "o"
-    case .Regular:
-      return "-"
-    case .None:
-      return ""
-    }
-  }
+public enum JumpType: String {
+  case into = "i"      // Jump into a function
+  case `return` = "o"  // Return from a function
+  case regular = "-"   // Generic jump
 }
 
 public struct SourceMapEntry {
@@ -41,7 +14,7 @@ public struct SourceMapEntry {
   public var modifierDepth: Int
 
   public func toString() -> String {
-    return "\(start):\(length):\(srcIndex):\(jump.toString()):\(modifierDepth)"
+    return "\(start):\(length):\(srcIndex):\(jump):\(modifierDepth)"
   }
 }
 
@@ -74,7 +47,7 @@ public struct SourceMap {
           start: Int(line[0])!,
           length: Int(line[1])!,
           srcIndex: Int(line[2])!,
-          jump: JumpType.fromString(s: line[3]),
+          jump: JumpType(rawValue: line[3]) ?? .regular,
           modifierDepth: Int(line[4]) ?? 0
       )
     }
