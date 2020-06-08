@@ -105,7 +105,7 @@ public class Debugger: EventEmitter<DebuggerEvent> {
         }
       } while currentLogIndex < trace.structLogs.count && (isAtBreakpoint || !shouldBreak())
     }
-    stepInternal()
+    stepInternal(ignoreBreakpoints: isAtBreakpoint)
     emitLineEvent()
   }
 
@@ -119,7 +119,7 @@ public class Debugger: EventEmitter<DebuggerEvent> {
     }
   }
 
-  private func stepInternal(reverse: Bool = false) {
+  private func stepInternal(reverse: Bool = false, ignoreBreakpoints: Bool = false) {
     if currentLogIndex <= 0 && reverse {
       return
     }
@@ -137,7 +137,7 @@ public class Debugger: EventEmitter<DebuggerEvent> {
       if currLoc != initLoc && currLoc != nil {
         break
       }
-    } while currentLogIndex > 0 && currentLogIndex < trace.structLogs.count && !shouldBreak()
+    } while currentLogIndex > 0 && currentLogIndex < trace.structLogs.count && (ignoreBreakpoints || !shouldBreak())
   }
 
   public func stepInstruction(count: Int = 1, reverse: Bool = false) {

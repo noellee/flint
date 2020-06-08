@@ -69,7 +69,7 @@ public class EVMSourceMapGenerator {
     }
 
     var artifact = try SolcArtifact.from(file: combinedJsonUrl)
-    artifact.version = "asfads"
+    artifact.version = "flintc"
     artifact.sourceList = sourceList.map { $0.path }
     artifact.contracts = [String: ContractInfo](
       uniqueKeysWithValues: artifact.contracts
@@ -118,24 +118,25 @@ public class EVMSourceMapGenerator {
           .min(by: { $0.key.length < $1.key.length })
           .map { $0.value }
 
+      let newEntry: SourceMapEntry
       if let srcLoc = match {
         let isFuncCall = self.funcCalls[srcLoc] != nil
         let jump = isFuncCall ? JumpType.into : mapping.jump
-        newMapping.append(
-            SourceMapEntry(
-                start: srcLoc.start,
-                length: srcLoc.length,
-                srcIndex: getSrcIndex(srcLoc.file),
-                jump: jump,
-                modifierDepth: mapping.modifierDepth))
+        newEntry = SourceMapEntry(
+            start: srcLoc.start,
+            length: srcLoc.length,
+            srcIndex: getSrcIndex(srcLoc.file),
+            jump: jump
+        )
       } else {
-        newMapping.append(SourceMapEntry(
+        newEntry = SourceMapEntry(
             start: 0,
             length: 0,
             srcIndex: -1,
-            jump: mapping.jump,
-            modifierDepth: mapping.modifierDepth))
+            jump: mapping.jump
+        )
       }
+      newMapping.append(newEntry)
     }
 
     var result = SourceMap(mappings: newMapping)

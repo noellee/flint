@@ -54,8 +54,8 @@ public struct ContractInfo: Codable {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     binRuntime = try values.decode(String.self, forKey: .binRuntime)
     bin = try values.decode(String.self, forKey: .bin)
-    srcMapRuntime = SourceMap.fromString(try values.decode(String.self, forKey: .srcMapRuntime))
-    srcMap = SourceMap.fromString(try values.decode(String.self, forKey: .srcMap))
+    srcMapRuntime = SourceMap.decompress(try values.decode(String.self, forKey: .srcMapRuntime))
+    srcMap = SourceMap.decompress(try values.decode(String.self, forKey: .srcMap))
     metadata = try values.decodeIfPresent(ContractMetadata.self, forKey: .metadata)
   }
 
@@ -63,8 +63,8 @@ public struct ContractInfo: Codable {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(binRuntime, forKey: .binRuntime)
     try container.encode(bin, forKey: .bin)
-    try container.encode(srcMapRuntime.toString(), forKey: .srcMapRuntime)
-    try container.encode(srcMap.toString(), forKey: .srcMap)
+    try container.encode(srcMapRuntime.compress(), forKey: .srcMapRuntime)
+    try container.encode(srcMap.compress(), forKey: .srcMap)
     try container.encodeIfPresent(metadata, forKey: .metadata)
   }
 }
