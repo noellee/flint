@@ -93,11 +93,12 @@ public class EVMSourceMapGenerator {
     let varDecls: [VariableDeclaration] = self.variableDeclarations[contractName] ?? []
     let storage: [StorageVariable] = varDecls.map { varDecl in
       let name = varDecl.identifier.name
-      switch varDecl.type.rawType {
+      let type = varDecl.type.rawType
+      switch type {
       case .fixedSizeArrayType(_, let size):
-        return StorageVariable(name: name, size: size)
+        return StorageVariable(name: name, type: type.name, size: size)
       default:
-        return StorageVariable(name: name, size: nil)
+        return StorageVariable(name: name, type: type.name, size: nil)
       }
     }
     return ContractMetadata(storage: storage, typeStates: self.typeStates[contractName] ?? [])

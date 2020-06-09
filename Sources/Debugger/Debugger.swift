@@ -1,5 +1,6 @@
 import Foundation
 import Source
+import SourceMap
 import Web3
 import Web3PromiseKit
 import PromiseKit
@@ -88,12 +89,26 @@ public class Debugger: EventEmitter<DebuggerEvent> {
         .compactMap { (key, val) -> (name: String, value: String)? in
           guard let value = val.string,
                 let position = Int(key, radix: 16),
-                let name = sourceCodeManager.resolveStorageVarName(position) else {
+                let (name, variable) = sourceCodeManager.resolveStorageVariable(position) else {
             return nil
           }
-          return (name: name, value: value)
+          return (name: name, value: formatVariableValue(value, for: variable))
         }
         ?? []
+  }
+
+  private func formatVariableValue(_ value: String, for varInfo: StorageVariable) -> String {
+    let baseType = varInfo.type.prefix { $0 != "[" }
+    switch baseType {
+    case "Int":
+      return Int(value, radix: 16)?.description ?? value
+    case "Wei":
+      return "\(Int(value, radix: 16)?.description ?? value) Wei"
+    case "Address":
+      return "0x" + value.suffix(40)
+    default:
+      return value
+    }
   }
 
   public func stepOut() {

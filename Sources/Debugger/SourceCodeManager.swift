@@ -9,7 +9,7 @@ protocol SourceCodeManager {
   func getSourceLocation(pc: Int) -> SourceLocation?
   func getLines(at: SourceLocation, extraBefore: Int, extraAfter: Int) -> [String]
   func getJumpType(pc: Int) -> JumpType
-  func resolveStorageVarName(_ position: Int) -> String?
+  func resolveStorageVariable(_ position: Int) -> (name: String, variable: StorageVariable)?
   func resolveTypeState(_ value: Int) -> String?
   var storageRange: Range<Int> { get }
 }
@@ -45,7 +45,7 @@ class FlintSourceCodeManager: SourceCodeManager {
     return contractInfo
   }
 
-  func resolveStorageVarName(_ position: Int) -> String? {
+  func resolveStorageVariable(_ position: Int) -> (name: String, variable: StorageVariable)? {
     guard let metadata = contractInfo.metadata else {
       return nil
     }
@@ -53,11 +53,11 @@ class FlintSourceCodeManager: SourceCodeManager {
     for variable in metadata.storage {
       if let size = variable.size, offset <= position, position < offset + size {  // fixed array type
         let index = position - offset
-        return "\(variable.name)[\(index)]"
+        return ("\(variable.name)[\(index)]", variable)
       }
 
       if offset == position {
-        return variable.name
+        return (variable.name, variable)
       }
       offset += variable.size ?? 1
     }

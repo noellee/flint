@@ -28,6 +28,7 @@ public struct SolcArtifact: Codable {
 
 public struct StorageVariable: Codable {
   public var name: String
+  public var type: String
   public var size: Int?  // non-nil if variable is fixed size array
 }
 
