@@ -34,11 +34,12 @@ public class EVMSourceMapGenerator {
   let funcCalls: [SourceLocation: String]
   let functionDeclarations: [FunctionDeclaration]
   let variableDeclarations: [String: [VariableDeclaration]]  // contract name -> [state variables]
+  let typeStates: [String: [String]]                         // contract name -> [possible (type) states]
 
   public init(irSourceMap: [SourceRange: SourceLocation], topLevelModule: TopLevelModule, outputDirectory: URL) {
     self.irSourceMap = irSourceMap
     self.outputDirectory = outputDirectory
-    self.sourceList = Array(Set(irSourceMap.values.map { $0.file }))
+    self.sourceList = Array(Set(irSourceMap.values.filter { $0 != .DUMMY }.map { $0.file }))
     self.sourceIndices = sourceList.enumerated().reduce(into: [URL: Int]()) { (result, source) in
       let (i, url) = source
       result[url] = i
@@ -59,6 +60,10 @@ public class EVMSourceMapGenerator {
     self.variableDeclarations = topLevelModule.extractContractDeclarations()
         .reduce(into: [String: [VariableDeclaration]]()) { (dict, contract) in
           dict[contract.identifier.name] = contract.extractVariableDeclarations()
+        }
+    self.typeStates = topLevelModule.extractContractDeclarations()
+        .reduce(into: [String: [String]]()) { (dict, contract) in
+          dict[contract.identifier.name] = contract.states.map { $0.name }
         }
   }
 
@@ -95,7 +100,7 @@ public class EVMSourceMapGenerator {
         return StorageVariable(name: name, size: nil)
       }
     }
-    return ContractMetadata(storage: storage)
+    return ContractMetadata(storage: storage, typeStates: self.typeStates[contractName] ?? [])
   }
 
   private func getSrcIndex(_ src: URL) -> Int {

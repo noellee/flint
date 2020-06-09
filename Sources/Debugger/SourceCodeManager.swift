@@ -10,6 +10,8 @@ protocol SourceCodeManager {
   func getLines(at: SourceLocation, extraBefore: Int, extraAfter: Int) -> [String]
   func getJumpType(pc: Int) -> JumpType
   func resolveStorageVarName(_ position: Int) -> String?
+  func resolveTypeState(_ value: Int) -> String?
+  var storageRange: Range<Int> { get }
 }
 
 class FlintSourceCodeManager: SourceCodeManager {
@@ -60,6 +62,19 @@ class FlintSourceCodeManager: SourceCodeManager {
       offset += variable.size ?? 1
     }
     return nil
+  }
+
+  var storageRange: Range<Int> {
+    let size = contractInfo.metadata?.storage.map { $0.size ?? 1 }.reduce(0, +) ?? 0
+    return 0..<size
+  }
+
+  func resolveTypeState(_ value: Int) -> String? {
+    let states = self.contractInfo.metadata?.typeStates ?? []
+    guard !states.isEmpty else {
+      return nil
+    }
+    return states[value]
   }
 
   func getSourceLocation(pc: Int) -> SourceLocation? {

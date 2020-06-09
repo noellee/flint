@@ -86,7 +86,7 @@ public class DebuggerCLI {
     case "storage":
       variables = debugger.storageVariables
     case "info":
-      variables = debugger.otherVariables
+      variables = debugger.evmVariables + debugger.flintVariables
     default:
       variables = []
     }

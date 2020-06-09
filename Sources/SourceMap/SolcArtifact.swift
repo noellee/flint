@@ -33,6 +33,7 @@ public struct StorageVariable: Codable {
 
 public struct ContractMetadata: Codable {
   public var storage: [StorageVariable]
+  public var typeStates: [String]
 }
 
 public struct ContractInfo: Codable {

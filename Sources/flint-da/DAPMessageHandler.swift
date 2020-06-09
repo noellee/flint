@@ -129,7 +129,8 @@ class FlintDAPMessageHandler: ProtocolMessageHandler {
         Scope(name: "stack", variablesReference: 1, expensive: false),
         Scope(name: "memory", variablesReference: 2, expensive: false),
         Scope(name: "storage", variablesReference: 3, expensive: false),
-        Scope(name: "others", variablesReference: 4, expensive: false)
+        Scope(name: "flint", variablesReference: 4, expensive: false),
+        Scope(name: "evm", variablesReference: 5, expensive: false)
       ])))
     case .variables(let args):
       var vars: [(name: String, value: String)]
@@ -141,7 +142,9 @@ class FlintDAPMessageHandler: ProtocolMessageHandler {
       case 3:
         vars = self.debugger!.storageVariables
       case 4:
-        vars = self.debugger!.otherVariables
+        vars = self.debugger!.flintVariables
+      case 5:
+        vars = self.debugger!.evmVariables
       default:
         vars = []
       }

@@ -47,7 +47,7 @@ public class Debugger: EventEmitter<DebuggerEvent> {
     } ?? []
   }
 
-  public var otherVariables: [(name: String, value: String)] {
+  public var evmVariables: [(name: String, value: String)] {
     guard let log = currentLogEntry else {
       return []
     }
@@ -60,6 +60,23 @@ public class Debugger: EventEmitter<DebuggerEvent> {
     ]
   }
 
+  public var flintVariables: [(name: String, value: String)] {
+    let rawTypeState = currentLogEntry?.storage?.first { (key, _) in
+      if let position = Int(key, radix: 16),
+         sourceCodeManager.storageRange.contains(position) {
+        return false
+      }
+      return true
+    }?.value.string
+    guard rawTypeState != nil,
+          let rawTypeStateInt = Int(rawTypeState!),
+          let typeState = sourceCodeManager.resolveTypeState(rawTypeStateInt) else {
+      return []
+    }
+
+    return [(name: "state", value: typeState)]
+  }
+
   public var memoryVariables: [(name: String, value: String)] {
     return currentLogEntry?.memory?
         .enumerated()
@@ -68,9 +85,9 @@ public class Debugger: EventEmitter<DebuggerEvent> {
 
   public var storageVariables: [(name: String, value: String)] {
     return currentLogEntry?.storage?
-        .compactMap { item -> (name: String, value: String)? in
-          guard let value = item.value.string,
-                let position = Int(item.key, radix: 16),
+        .compactMap { (key, val) -> (name: String, value: String)? in
+          guard let value = val.string,
+                let position = Int(key, radix: 16),
                 let name = sourceCodeManager.resolveStorageVarName(position) else {
             return nil
           }
