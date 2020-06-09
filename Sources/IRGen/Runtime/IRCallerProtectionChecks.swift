@@ -55,7 +55,7 @@ struct IRCallerProtectionChecks {
       case .fixedSizeArrayType(_, let size):
         return (0..<size).map { index in
           let check = IRRuntimeFunction.isValidCallerProtection(address: "sload(add(\(offset!), \(index)))")
-          return "\(variableName) := add(\(variableName), \(check)"
+          return "\(variableName) := add(\(variableName), \(check))"
           }.joined(separator: "\n")
       case .arrayType:
         let check = IRRuntimeFunction.isCallerProtectionInArray(arrayOffset: offset!)
