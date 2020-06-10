@@ -58,7 +58,7 @@ public struct CodeFragment: CustomStringConvertible {
   private var text: String = ""
 
   public var description: String {
-    return children.isEmpty ? text : children.map { $0.description }.joined()
+    return isLeaf ? text : children.map { $0.description }.joined()
   }
 
   init() {
@@ -87,7 +87,7 @@ public struct CodeFragment: CustomStringConvertible {
       pos += childLength
     }
 
-    let length = children.isEmpty ? text.count : pos - offset
+    let length = isLeaf ? text.count : pos - offset
     if fromSource != nil {
       srcMap[SourceRange(start: offset, length: length)] = fromSource
     }
@@ -137,18 +137,30 @@ extension CodeFragment: ExpressibleByStringInterpolation {
 }
 
 extension CodeFragment {
+  private var isLeaf: Bool { return self.children.isEmpty }
+
   public func write(to url: URL, atomically useAuxiliaryFile: Bool, encoding enc: String.Encoding) throws {
     try self.text.write(to: url, atomically: useAuxiliaryFile, encoding: enc)
   }
 
   public func indented(by level: Int, andFirst: Bool = false) -> CodeFragment {
-    var copy = self
-    if copy.children.isEmpty {
-      copy.text = copy.text.indented(by: level, andFirst: andFirst)
-    } else {
-
-    }
+    let spaces = String(repeating: " ", count: level)
+    var copy = andFirst ? (spaces + self) : self
+    copy.indent(by: level)
     return copy
+  }
+
+  // modifies CodeFragment in-place
+  private mutating func indent(by level: Int) {
+    if self.isLeaf {
+      self.text = self.text.indented(by: level)
+    } else {
+      self.children = self.children.map {
+        var child = $0
+        child.indent(by: level)
+        return child
+      }
+    }
   }
 
   public func fromSource(_ fromSource: SourceLocation?) -> CodeFragment {
@@ -167,7 +179,7 @@ extension CodeFragment {
 
   public static func + (left: CodeFragment, right: CodeFragment) -> CodeFragment {
     var copy: CodeFragment
-    if left.children.isEmpty || left.fromSource != nil {
+    if left.isLeaf || left.fromSource != nil {
       copy = CodeFragment(left.text)
       copy.children.append(left)
     } else {
