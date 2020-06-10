@@ -84,9 +84,87 @@ final class CodeFragmentTests: XCTestCase {
     XCTAssert(sourceMap[SourceRange(start: 23, length: 12)] == sourceLocC)
   }
 
+  func testIndentation() {
+    let sourceLocA = SourceLocation(line: 1, column: 2, length: 3, file: .init(fileURLWithPath: "a"))
+    let sourceLocB = SourceLocation(line: 4, column: 5, length: 6, file: .init(fileURLWithPath: "b"))
+    let sourceLocC = SourceLocation(line: 7, column: 8, length: 9, file: .init(fileURLWithPath: "c"))
+
+    let fragmentA = CodeFragment("Fragment A").fromSource(sourceLocA)
+    let fragmentB = CodeFragment("Fragment BB").fromSource(sourceLocB)
+    let fragmentC = CodeFragment("Fragment CCC").fromSource(sourceLocC)
+
+    // 0         1         2         3
+    // 0123456789012345678901234567890123456789
+    // Fragment A Fragment BB Fragment CCC
+    let fragment: CodeFragment = "\(fragmentA)\n\(fragmentB)\n\(fragmentC)"
+    let indented = fragment.indented(by: 2)
+
+    print(indented)
+    XCTAssert(fragment.description == """
+                                      Fragment A
+                                      Fragment BB
+                                      Fragment CCC
+                                      """)
+    XCTAssert(indented.description == """
+                                      Fragment A
+                                        Fragment BB
+                                        Fragment CCC
+                                      """)
+
+    let sourceMap = indented.generateSourceMap()
+
+    sourceMap
+        .sorted { $0.key.start < $1.key.start }
+        .forEach { print($0, $1) }
+
+    XCTAssert(sourceMap[SourceRange(start: 0, length: 10)] == sourceLocA)
+    XCTAssert(sourceMap[SourceRange(start: 13, length: 11)] == sourceLocB)
+    XCTAssert(sourceMap[SourceRange(start: 27, length: 12)] == sourceLocC)
+  }
+
+  func testIndentationAndFirst() {
+    let sourceLocA = SourceLocation(line: 1, column: 2, length: 3, file: .init(fileURLWithPath: "a"))
+    let sourceLocB = SourceLocation(line: 4, column: 5, length: 6, file: .init(fileURLWithPath: "b"))
+    let sourceLocC = SourceLocation(line: 7, column: 8, length: 9, file: .init(fileURLWithPath: "c"))
+
+    let fragmentA = CodeFragment("Fragment A").fromSource(sourceLocA)
+    let fragmentB = CodeFragment("Fragment BB").fromSource(sourceLocB)
+    let fragmentC = CodeFragment("Fragment CCC").fromSource(sourceLocC)
+
+    // 0         1         2         3
+    // 0123456789012345678901234567890123456789
+    // Fragment A Fragment BB Fragment CCC
+    let fragment: CodeFragment = "\(fragmentA)\n\(fragmentB)\n\(fragmentC)"
+    let indented = fragment.indented(by: 2, andFirst: true)
+
+    print(indented)
+    XCTAssert(fragment.description == """
+                                      Fragment A
+                                      Fragment BB
+                                      Fragment CCC
+                                      """)
+    XCTAssert(indented.description == """
+                                        Fragment A
+                                        Fragment BB
+                                        Fragment CCC
+                                      """)
+
+    let sourceMap = indented.generateSourceMap()
+
+    sourceMap
+        .sorted { $0.key.start < $1.key.start }
+        .forEach { print($0, $1) }
+
+    XCTAssert(sourceMap[SourceRange(start: 2, length: 10)] == sourceLocA)
+    XCTAssert(sourceMap[SourceRange(start: 15, length: 11)] == sourceLocB)
+    XCTAssert(sourceMap[SourceRange(start: 29, length: 12)] == sourceLocC)
+  }
+
   static var allTests = [
     ("testNestedCodeFragment", testNestedCodeFragment),
     ("testMultipleStringInterpolation", testMultipleStringInterpolation),
-    ("testJoinCodeFragments", testJoinCodeFragments)
+    ("testJoinCodeFragments", testJoinCodeFragments),
+    ("testIndentation", testIndentation),
+    ("testIndentationAndFirst", testIndentationAndFirst)
   ]
 }
