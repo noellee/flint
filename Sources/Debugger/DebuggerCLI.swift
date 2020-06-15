@@ -28,7 +28,7 @@ public class DebuggerCLI {
     let underline = String(repeating: "^", count: highlightEnd - highlightStart)
     if underline.count > 0 {
       let padding = String(repeating: " ", count: String(log.pc).count)
-      print(padding, underline)
+      print(padding, underline.green)
     }
   }
 
@@ -47,8 +47,8 @@ public class DebuggerCLI {
 
       if i == extraBefore {
         let padding = String(repeating: " ", count: lineLabel.count)
-        print(padding,
-            String(repeating: " ", count: loc.column - 1) + String(repeating: "^", count: min(loc.length, line.count)))
+        let underline = String(repeating: "^", count: min(loc.length, line.count)).green
+        print(padding, String(repeating: " ", count: loc.column - 1) + underline)
       }
     }
   }
@@ -85,8 +85,10 @@ public class DebuggerCLI {
       variables = debugger.memoryVariables
     case "storage":
       variables = debugger.storageVariables
-    case "info":
-      variables = debugger.evmVariables + debugger.flintVariables
+    case "evm":
+      variables = debugger.evmVariables
+    case "flint":
+      variables = debugger.flintVariables
     default:
       variables = []
     }
@@ -103,7 +105,9 @@ public class DebuggerCLI {
       return
     }
     mainLoop: while currentLogIndex < trace!.structLogs.count {
+      print()
       printSourceContext()
+      print()
       if reverse {
         print()
         print("Reverse debugging: ON".lightCyan)
